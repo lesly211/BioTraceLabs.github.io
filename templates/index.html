@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OSINFOR | Verificador Forestal Inteligente</title>
+  <meta name="description" content="Sistema de verificación forestal OSINFOR. Identifica árboles mediante foto y verifica si están incluidos en el inventario y plan de manejo vigente." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <!-- ========== HEADER ========== -->
+  <header class="header" id="main-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="brand-icon">🌳</div>
+        <div class="brand-text">
+          <span class="brand-name">OSINFOR</span>
+          <span class="brand-sub">Verificador Forestal IA</span>
+        </div>
+      </div>
+      <div class="header-status" id="api-status">
+        <span class="status-dot"></span>
+        <span class="status-label">Cargando...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== LAYOUT PRINCIPAL ========== -->
+  <main class="main-layout">
+
+    <!-- PANEL IZQUIERDO: ESTADÍSTICAS -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">📊 Inventario</h3>
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card">
+            <span class="stat-number" id="stat-arboles">—</span>
+            <span class="stat-label">Árboles</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number" id="stat-especies">—</span>
+            <span class="stat-label">Especies</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number" id="stat-planes">—</span>
+            <span class="stat-label">Planes activos</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number" id="stat-protegidas">—</span>
+            <span class="stat-label">Protegidas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">🌿 Especies registradas</h3>
+        <div class="species-list" id="species-list">
+          <div class="loading-species">Cargando...</div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">🕐 Consultas recientes</h3>
+        <div class="history-list" id="history-list">
+          <p class="empty-msg">Sin consultas aún</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- PANEL PRINCIPAL: CHATBOT -->
+    <section class="chat-container">
+      <!-- Área de mensajes -->
+      <div class="chat-messages" id="chat-messages">
+        <!-- Los mensajes se inyectarán aquí -->
+      </div>
+
+      <!-- Zona de upload de imagen -->
+      <div class="chat-input-area">
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="file-input" accept="image/*" hidden />
+          <div class="upload-content" id="upload-content">
+            <div class="upload-icon">📷</div>
+            <p class="upload-title">Sube una foto del árbol</p>
+            <p class="upload-subtitle">Arrastra aquí o haz clic para seleccionar</p>
+            <p class="upload-formats">JPG, PNG, WEBP · Máx. 16MB</p>
+          </div>
+          <div class="upload-preview" id="upload-preview" style="display:none;">
+            <img id="preview-img" src="" alt="Vista previa" />
+            <div class="preview-actions">
+              <button class="btn-verify" id="btn-verify" onclick="verificarArbol()">
+                <span class="btn-icon">🔍</span>
+                Verificar en inventario
+              </button>
+              <button class="btn-cancel" onclick="cancelarImagen()">✕ Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========== MODAL DE RESULTADO ========== -->
+  <div class="modal-overlay" id="result-modal" style="display:none;" onclick="cerrarModal(event)">
+    <div class="modal-card" id="modal-card">
+      <button class="modal-close" onclick="cerrarModal()">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- ========== TOAST NOTIFICATIONS ========== -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

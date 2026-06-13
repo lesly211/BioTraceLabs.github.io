@@ -67,12 +67,14 @@ def inicializar_identificador():
 @app.route('/')
 def index():
     """Página principal — sistema BioTrace con diseño actualizado."""
-    return send_from_directory('biotrace', 'index.html')
+    from flask import redirect
+    return redirect('/biotrace/index.html')
 
 
+@app.route('/biotrace/')
 @app.route('/biotrace/<path:filename>')
-def biotrace_files(filename):
-    """Sirve archivos del sistema BioTrace."""
+def biotrace_files(filename='index.html'):
+    """Sirve archivos del sistema BioTrace con rutas relativas correctas."""
     return send_from_directory('biotrace', filename)
 
 

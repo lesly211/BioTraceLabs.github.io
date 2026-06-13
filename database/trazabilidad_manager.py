@@ -238,13 +238,83 @@ def obtener_guias_chofer(chofer_id) -> list:
 
 
 def registrar_recepcion_centro(centro_id, codigo_trozo, foto_corteza_path='', observaciones='') -> dict:
-    """Registra la recepción de un trozo en el centro de transformación y verifica su legalidad."""
+    """
+    Registra la recepción de un trozo en el centro de transformación.
+    Verifica su legalidad Y compara la foto del corte transversal recibida
+    con la foto original tomada por el titular usando visión por computadora.
+    """
     trozo = obtener_trozo_por_codigo(codigo_trozo)
     if not trozo:
         return {"success": False, "error": "Código de trozo no encontrado"}
 
+    # 1. Verificación de legalidad (plan de manejo, inventario OSINFOR)
     verificacion = verificar_legalidad_trozo(codigo_trozo)
-    resultado = "APROBADO" if verificacion["valido"] else "RECHAZADO"
+    
+    # 2. Comparación de imágenes de cortes transversales
+    comparacion_imagenes = {"success": False, "mensaje": "No se realizó comparación de imágenes"}
+    similitud_porcentaje = verificacion.get('similitud_porcentaje', 0)
+    
+    if foto_corteza_path and trozo.get('foto_corte_transversal'):
+        try:
+            # Importar el comparador de imágenes
+            import sys
+            from pathlib import Path
+            sys.path.insert(0, str(Path(__file__).parent.parent))
+            from identificador.comparador_imagenes import comparar_cortes_transversales
+            
+            # Comparar la foto original del titular con la foto del centro
+            foto_original = trozo['foto_corte_transversal']
+            foto_recepcion = foto_corteza_path
+            
+            print(f"[Comparación] Comparando fotos:")
+            print(f"  - Original (titular): {foto_original}")
+            print(f"  - Recepción (centro): {foto_recepcion}")
+            
+            comparacion_imagenes = comparar_cortes_transversales(foto_original, foto_recepcion)
+            
+            if comparacion_imagenes.get("success"):
+                similitud_porcentaje = comparacion_imagenes.get("similitud_porcentaje", 0)
+                print(f"[Comparación] Similitud: {similitud_porcentaje}%")
+            else:
+                print(f"[Comparación] Error: {comparacion_imagenes.get('error')}")
+                
+        except Exception as e:
+            print(f"[Comparación] Error al comparar imágenes: {e}")
+            import traceback
+            traceback.print_exc()
+            comparacion_imagenes = {
+                "success": False,
+                "error": f"Error en comparación de imágenes: {str(e)}"
+            }
+    else:
+        mensaje_falta = []
+        if not foto_corteza_path:
+            mensaje_falta.append("foto de recepción")
+        if not trozo.get('foto_corte_transversal'):
+            mensaje_falta.append("foto original del titular")
+        comparacion_imagenes = {
+            "success": False,
+            "mensaje": f"No se puede comparar: falta {' y '.join(mensaje_falta)}"
+        }
+    
+    # 3. Determinar resultado final combinando legalidad Y comparación de imágenes
+    # Para aprobar, debe ser legal Y tener buena similitud de imágenes
+    if verificacion["valido"]:
+        if comparacion_imagenes.get("success") and comparacion_imagenes.get("coincide"):
+            resultado = "APROBADO"
+            motivo_resultado = "Legal y foto verificada"
+        elif comparacion_imagenes.get("success") and not comparacion_imagenes.get("coincide"):
+            resultado = "RECHAZADO"
+            motivo_resultado = "Legal pero la foto del corte NO coincide con la original"
+        elif not comparacion_imagenes.get("success"):
+            resultado = "APROBADO"  # Si no hay comparación, solo basarse en legalidad
+            motivo_resultado = "Legal (comparación de imagen no disponible)"
+        else:
+            resultado = "APROBADO"
+            motivo_resultado = "Legal"
+    else:
+        resultado = "RECHAZADO"
+        motivo_resultado = verificacion.get("motivo", "No cumple con inventario legal")
 
     conn = get_connection()
     try:
@@ -254,11 +324,35 @@ def registrar_recepcion_centro(centro_id, codigo_trozo, foto_corteza_path='', ob
                 resultado_verificacion, similitud_porcentaje, observaciones)
                VALUES (?,?,?,?,?,?,?)""",
             (trozo['id'], centro_id, codigo_trozo, foto_corteza_path,
-             resultado, verificacion.get('similitud_porcentaje', 0), observaciones)
+             resultado, similitud_porcentaje, observaciones)
         )
         conn.execute("UPDATE censos_trozo SET estado='RECIBIDO' WHERE id=?", (trozo['id'],))
         conn.commit()
-        return {"success": True, "verificacion": verificacion, "resultado": resultado}
+        
+        # Convertir rutas absolutas a rutas relativas para el frontend
+        foto_original_url = None
+        foto_recepcion_url = None
+        
+        if trozo.get('foto_corte_transversal'):
+            # Extraer solo el nombre del archivo de la ruta completa
+            from pathlib import Path
+            foto_nombre = Path(trozo['foto_corte_transversal']).name
+            foto_original_url = f"/uploads/{foto_nombre}"
+        
+        if foto_corteza_path:
+            foto_nombre = Path(foto_corteza_path).name
+            foto_recepcion_url = f"/uploads/{foto_nombre}"
+        
+        return {
+            "success": True,
+            "verificacion": verificacion,
+            "comparacion_imagenes": comparacion_imagenes,
+            "resultado": resultado,
+            "motivo_resultado": motivo_resultado,
+            "similitud_porcentaje": similitud_porcentaje,
+            "foto_original_url": foto_original_url,
+            "foto_recepcion_url": foto_recepcion_url
+        }
     except Exception as e:
         return {"success": False, "error": str(e)}
     finally:

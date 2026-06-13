@@ -386,8 +386,8 @@
     <!-- TAB: SUBIR CORTEZA -->
     <div id="tab-centro-subir" class="tab-content">
       <div class="section-header">
-        <h1>Registro de Corteza</h1>
-        <p>Suba la foto del corte transversal para vincularla al QR y generar trazabilidad</p>
+        <h1>Verificación por Comparación de Imágenes</h1>
+        <p>Suba la foto del <strong>corte transversal</strong> de la troza recibida. El sistema comparará automáticamente con la foto original del titular usando algoritmos de visión por computadora para verificar autenticidad.</p>
       </div>
 
       <div class="corteza-upload">
@@ -395,8 +395,8 @@
           <input type="file" id="file-corteza" accept="image/*" hidden onchange="previewFoto(this,'prev-corteza')" />
           <div id="prev-corteza" class="foto-preview">
             <div class="foto-placeholder">
-              <span class="foto-icon big">🌲</span>
-              <p>Toca para subir la foto<br>del <strong>corte transversal</strong><br>del árbol</p>
+              <span class="foto-icon big">📸</span>
+              <p>Toca para subir la foto<br>del <strong>corte transversal</strong><br>de la troza recibida<br><small style="color: #888;">(Se comparará con la foto original)</small></p>
             </div>
           </div>
         </div>
@@ -407,12 +407,12 @@
         </div>
         <div class="input-group">
           <label>Observaciones</label>
-          <textarea id="corteza-obs" placeholder="Estado de la madera, condiciones..." rows="3"></textarea>
+          <textarea id="corteza-obs" placeholder="Estado de la madera, condiciones de recepción..." rows="3"></textarea>
         </div>
 
         <div id="corteza-error" class="error-msg hidden"></div>
         <button class="btn-primary btn-large" onclick="registrarCorteza()">
-          🔖 Registrar Recepción y Verificar Legalidad
+          🔬 Registrar y Comparar Imágenes
         </button>
         <div id="corteza-result" class="verify-result hidden mt-1"></div>
       </div>

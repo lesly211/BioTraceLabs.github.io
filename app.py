@@ -230,6 +230,12 @@ def static_files(filename):
     return send_from_directory('static', filename)
 
 
+@app.route('/uploads/<path:filename>')
+def uploaded_files(filename):
+    """Sirve archivos subidos desde la carpeta uploads."""
+    return send_from_directory(str(UPLOAD_FOLDER), filename)
+
+
 # ============================================================
 # API ENDPOINTS
 # ============================================================

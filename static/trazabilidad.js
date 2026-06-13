@@ -289,16 +289,32 @@ async function verificarQR() {
   }, 100);
 }
 
-function renderResult(v, trozo) {
-  const ok = v.valido;
-  const pct = v.similitud_porcentaje || 0;
+function renderResult(v, trozo, comparacion = null, resultadoFinal = null, motivoResultado = null, fotoOriginal = null, fotoRecepcion = null) {
+  // Usar el resultado final del backend si está disponible, sino usar v.valido
+  const ok = resultadoFinal ? (resultadoFinal === 'APROBADO') : v.valido;
+  
+  // Determinar si hay información de comparación de imágenes
+  const tieneComparacion = comparacion && comparacion.success;
+  const metricas = tieneComparacion ? comparacion.metricas_detalladas : null;
+  const interpretacion = tieneComparacion ? comparacion.interpretacion : null;
+  
+  // IMPORTANTE: Usar el porcentaje de la comparación de imágenes si está disponible
+  // Si no, usar el porcentaje de verificación legal
+  const pct = tieneComparacion ? comparacion.similitud_porcentaje : (v.similitud_porcentaje || 0);
+  
+  // Usar el motivo del resultado final si está disponible
+  const mensajeMotivo = motivoResultado || v.motivo;
+  
+  // Determinar si se deben mostrar las fotos
+  const mostrarFotos = tieneComparacion && fotoOriginal && fotoRecepcion;
+  
   return `
     <div class="verify-result ${ok ? 'result-approved' : 'result-rejected'}">
       <div class="result-header">
         <span class="result-icon">${ok ? '✅' : '❌'}</span>
         <div>
-          <div class="result-title">${ok ? 'MADERA LEGAL' : 'NO VERIFICADO'}</div>
-          <div class="result-subtitle">${v.motivo}</div>
+          <div class="result-title">${ok ? 'APROBADO' : 'RECHAZADO'}</div>
+          <div class="result-subtitle">${mensajeMotivo}</div>
         </div>
       </div>
       <div class="result-body">
@@ -312,7 +328,72 @@ function renderResult(v, trozo) {
           <div class="result-row"><span class="result-key">Plan de Manejo:</span><span class="result-val">${trozo.plan_manejo_referencia || '—'}</span></div>
           <div class="result-row"><span class="result-key">GPS:</span><span class="result-val">${trozo.coordenadas_gps || '—'}</span></div>
         ` : ''}
-        ${ok ? `
+        
+        ${tieneComparacion ? `
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e8e8e8;">
+            <h4 style="margin: 0 0 16px 0; color: #0d3b2e; font-size: 14px;">📸 Comparación de Imágenes (Corte Transversal)</h4>
+            
+            ${mostrarFotos ? `
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div style="text-align: center;">
+                  <div style="background: #f8f9fa; padding: 8px; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <img src="${fotoOriginal}" alt="Foto Original (Titular)" style="width: 100%; height: 200px; object-fit: contain; border-radius: 6px;" />
+                  </div>
+                  <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280; font-weight: 600;">📷 Foto Original (Titular)</p>
+                </div>
+                <div style="text-align: center;">
+                  <div style="background: #f8f9fa; padding: 8px; border-radius: 8px; border: 2px solid #e5e7eb;">
+                    <img src="${fotoRecepcion}" alt="Foto Recepción (Centro)" style="width: 100%; height: 200px; object-fit: contain; border-radius: 6px;" />
+                  </div>
+                  <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280; font-weight: 600;">📷 Foto Recepción (Centro)</p>
+                </div>
+              </div>
+            ` : ''}
+            
+            <div class="result-row">
+              <span class="result-key">Similitud Total:</span>
+              <span class="result-val" style="font-weight: bold; color: ${comparacion.coincide ? '#2d5f47' : '#dc2626'}">
+                ${pct}% - ${comparacion.nivel_similitud}
+              </span>
+            </div>
+            <div class="similitud-bar" style="margin: 8px 0 16px 0">
+              <div class="similitud-fill" style="width:0%; background: ${comparacion.coincide ? '#2d5f47' : '#dc2626'}"></div>
+            </div>
+            <div style="background: ${comparacion.coincide ? '#dcfce7' : '#fee2e2'}; padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid ${comparacion.coincide ? '#2d5f47' : '#dc2626'}">
+              <p style="margin: 0; font-size: 13px; color: #374151; font-weight: 500;">${comparacion.mensaje}</p>
+            </div>
+            
+            ${metricas ? `
+              <details style="margin-top: 12px;">
+                <summary style="cursor: pointer; font-weight: 600; color: #0d3b2e; margin-bottom: 8px;">Ver Métricas Detalladas</summary>
+                <div style="padding: 12px; background: #fafafa; border-radius: 4px; font-size: 12px;">
+                  <div class="result-row">
+                    <span class="result-key">SSIM (Estructura):</span>
+                    <span class="result-val">${metricas.ssim}%</span>
+                  </div>
+                  <p style="margin: 4px 0 12px 0; font-size: 11px; color: #666;">${interpretacion.ssim}</p>
+                  
+                  <div class="result-row">
+                    <span class="result-key">Histograma (Color):</span>
+                    <span class="result-val">${metricas.histograma}%</span>
+                  </div>
+                  <p style="margin: 4px 0 12px 0; font-size: 11px; color: #666;">${interpretacion.histograma}</p>
+                  
+                  <div class="result-row">
+                    <span class="result-key">Features (Patrones):</span>
+                    <span class="result-val">${metricas.features}%</span>
+                  </div>
+                  <p style="margin: 4px 0 12px 0; font-size: 11px; color: #666;">${interpretacion.features}</p>
+                  
+                  <div class="result-row">
+                    <span class="result-key">MSE (Error):</span>
+                    <span class="result-val">${metricas.mse.toFixed(2)}</span>
+                  </div>
+                </div>
+              </details>
+            ` : ''}
+          </div>
+        ` : ok ? `
           <div class="result-row">
             <span class="result-key">Coincidencia legal:</span>
             <span class="result-val">${pct}%</span>
@@ -381,19 +462,40 @@ async function registrarCorteza() {
   formData.append('codigo_trozo', codigo);
   formData.append('observaciones', obs);
   const fileCorteza = document.getElementById('file-corteza').files[0];
-  if (fileCorteza) formData.append('foto_corteza', fileCorteza);
+  if (!fileCorteza) {
+    errEl.textContent = 'Por favor suba una foto del corte transversal';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  formData.append('foto_corteza', fileCorteza);
+
+  resEl.innerHTML = '<div class="loading-spinner">⏳ Procesando y comparando imágenes...</div>';
+  resEl.classList.remove('hidden');
 
   const res = await apiFetch('/api/traz/recepcion', { method: 'POST', body: formData });
   if (res.success) {
-    resEl.classList.remove('hidden');
-    resEl.innerHTML = renderResult(res.verificacion, res.verificacion.trozo);
+    const trozo = res.verificacion?.trozo || null;
+    const comparacion = res.comparacion_imagenes || null;
+    const resultado = res.resultado || 'RECHAZADO';
+    const motivoResultado = res.motivo_resultado || '';
+    const fotoOriginal = res.foto_original_url || null;
+    const fotoRecepcion = res.foto_recepcion_url || null;
+    
+    resEl.innerHTML = renderResult(res.verificacion, trozo, comparacion, resultado, motivoResultado, fotoOriginal, fotoRecepcion);
+    
     setTimeout(() => {
       const bar = resEl.querySelector('.similitud-fill');
-      if (bar) bar.style.width = (res.verificacion.similitud_porcentaje || 0) + '%';
+      if (bar) bar.style.width = (res.similitud_porcentaje || 0) + '%';
     }, 100);
+    
+    // Actualizar la lista de pedidos
+    if (currentUser.rol === 'centro_transformacion') {
+      loadPedidos();
+    }
   } else {
     errEl.textContent = res.error || 'Error al registrar';
     errEl.classList.remove('hidden');
+    resEl.classList.add('hidden');
   }
 }
 

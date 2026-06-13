@@ -324,7 +324,34 @@ body {
 .mt-2 { margin-top:24px; }
 .guia-card { border-left-color:var(--blue) !important; }
 
+/* ===== COMPARACION DE IMAGENES ===== */
+.comparison-image-wrapper {
+  background: #f8f9fa;
+  padding: 8px;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.comparison-image-wrapper:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--green-main);
+}
+
+.comparison-image-wrapper img {
+  display: block;
+  width: 100%;
+}
+
 /* ===== RESPONSIVE ===== */
+@media (max-width:768px) {
+  .comparison-images-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 @media (max-width:400px) {
   .form-grid { grid-template-columns:1fr; }
   .foto-upload-section { grid-template-columns:1fr 1fr; }

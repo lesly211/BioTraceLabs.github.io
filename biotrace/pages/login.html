@@ -133,7 +133,7 @@
                     setTimeout(() => {
                         if (result.usuario.rol === 'titular') {
                             location.href = '../pages/titular_form.html';
-                        } else if (result.usuario.rol === 'chofer') {
+                        } else if (result.usuario.rol === 'conductor' || result.usuario.rol === 'chofer') {
                             location.href = '../pages/chofer_dashboard.html';
                         } else if (result.usuario.rol === 'centro_transformacion' || result.usuario.rol === 'centro') {
                             location.href = '../pages/centro_dashboard.html';

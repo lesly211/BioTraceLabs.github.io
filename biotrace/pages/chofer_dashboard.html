@@ -3,40 +3,208 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chofer – Módulo de registro</title>
+  <title>Chofer – BioTrace Logística</title>
   <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .header-banner {
+      background: linear-gradient(135deg, #0d3b2e 0%, #1a5c47 100%);
+      color: white;
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    
+    .header-banner h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    
+    .header-banner p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    
+    .form-card {
+      background: white;
+      border-radius: 16px;
+      padding: 32px 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .form-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0d3b2e;
+      margin: 0 0 24px 0;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .field-group-modern {
+      margin-bottom: 20px;
+    }
+    
+    .field-label-modern {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    
+    .input-modern {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+    }
+    
+    .input-modern:focus {
+      outline: none;
+      border-color: #0d3b2e;
+      box-shadow: 0 0 0 3px rgba(13, 59, 46, 0.1);
+    }
+    
+    .input-modern::placeholder {
+      color: #9ca3af;
+    }
+    
+    textarea.input-modern {
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+    }
+    
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #0d3b2e 0%, #1a5c47 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 8px;
+    }
+    
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(13, 59, 46, 0.3);
+    }
+    
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .alert-box {
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 16px;
+      font-weight: 500;
+      text-align: center;
+      display: none;
+      animation: slideDown 0.3s ease;
+    }
+    
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 2px solid #c3e6cb;
+    }
+    
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 2px solid #f5c6cb;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
 </head>
-<body class="dark-teal-bg">
-  <div class="screen">
-    <div class="chofer-header">
-      <div class="logo-row">
-        <div class="logo-icon">S</div>
-        <div>
-          <span class="logo-text">SHONOS</span><br>
-          <span class="logo-sub">L O G Í S T I C A</span>
-        </div>
+<body class="mint-bg">
+  <div class="screen" style="max-width: 600px; margin: 0 auto;">
+    <div class="header-banner">
+      <h1>🚛 Chofer - Logística</h1>
+      <p id="userName">BioTrace Sistema de Transporte</p>
+    </div>
+    
+    <div class="form-card">
+      <h2 class="form-title">📋 Registrar Guía de Transporte</h2>
+      
+      <div class="field-group-modern">
+        <label class="field-label-modern">Código del Trozo</label>
+        <input type="text" id="codigoTrozo" placeholder="Ej: TRZ-2026-001" class="input-modern">
       </div>
+      
+      <div class="field-group-modern">
+        <label class="field-label-modern">Placa del Vehículo</label>
+        <input type="text" id="placa" placeholder="ABC-123" class="input-modern">
+      </div>
+      
+      <div class="field-group-modern">
+        <label class="field-label-modern">Lugar de Origen</label>
+        <input type="text" id="origen" placeholder="Ciudad/Región de origen" class="input-modern">
+      </div>
+      
+      <div class="field-group-modern">
+        <label class="field-label-modern">Lugar de Destino</label>
+        <input type="text" id="destino" placeholder="Ciudad/Región de destino" class="input-modern">
+      </div>
+      
+      <div class="field-group-modern">
+        <label class="field-label-modern">Observaciones (Opcional)</label>
+        <textarea id="observaciones" placeholder="Información adicional sobre el transporte..." class="input-modern"></textarea>
+      </div>
+      
+      <button onclick="registrarGuia()" class="btn-submit">📋 Registrar Guía de Transporte</button>
+      
+      <div id="msg" class="alert-box alert-success"></div>
+      <div id="err" class="alert-box alert-error"></div>
     </div>
-    <div class="chofer-card">
-      <h2 class="section-title dark">Registrar Guía de Transporte</h2>
-      <div class="info-row"><span class="info-label">CÓDIGO TROZO:</span> <input type="text" id="codigoTrozo" placeholder="Ej: TRZ-2026-001" class="info-input"></div>
-      <div class="info-row"><span class="info-label">PLACA:</span>        <input type="text" id="placa"       placeholder="ABC-123"       class="info-input"></div>
-      <div class="info-row"><span class="info-label">ORIGEN:</span>       <input type="text" id="origen"      placeholder="Lugar de origen" class="info-input"></div>
-      <div class="info-row"><span class="info-label">DESTINO:</span>      <input type="text" id="destino"     placeholder="Lugar de destino" class="info-input"></div>
-      <div class="info-row"><span class="info-label">OBSERVACIONES:</span><textarea id="observaciones" placeholder="Observaciones opcionales" class="info-input" rows="2"></textarea></div>
-      <button onclick="registrarGuia()" class="btn btn-teal" style="margin-top:20px">📋 Registrar Guía</button>
-      <div id="msg" class="success-msg" style="display:none"></div>
-      <div id="err" class="alert" style="display:none; margin-top:10px; background:#ff4444; color:#fff; padding:10px; border-radius:8px;"></div>
-    </div>
-    <a href="../index.html" class="back-link light">← Salir</a>
+    
+    <a href="../index.html" class="back-link" style="margin-top: 24px; display: inline-block;">← Salir</a>
   </div>
   <script>
     if (sessionStorage.getItem('btl_role') !== 'conductor') location.href = '../pages/login.html?role=chofer';
 
     const chofer_id = sessionStorage.getItem('btl_user_id') || 2;
-    const chofer_placa = sessionStorage.getItem('btl_placa') || 'N/A';
+    const chofer_placa = sessionStorage.getItem('btl_placa') || '';
+    const userName = sessionStorage.getItem('btl_user_name');
     
-    document.getElementById('placa').value = chofer_placa;
+    if (userName) {
+      document.getElementById('userName').textContent = `Bienvenido, ${userName}`;
+    }
+    
+    if (chofer_placa) {
+      document.getElementById('placa').value = chofer_placa;
+    }
 
     async function registrarGuia() {
       const codigoTrozo = document.getElementById('codigoTrozo').value.trim();

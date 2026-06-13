@@ -3,49 +3,132 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Titular – Fotos y QR</title>
+  <title>Titular – Fotos y Registro</title>
   <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .header-banner {
+      background: linear-gradient(135deg, #0d3b2e 0%, #1a5c47 100%);
+      color: white;
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    
+    .header-banner h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    
+    .header-banner p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+    
+    .form-card {
+      background: white;
+      border-radius: 16px;
+      padding: 32px 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .form-progress {
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: 600;
+    }
+    
+    .progress-bar {
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0d3b2e 0%, #1a5c47 100%);
+      width: 100%;
+      transition: width 0.3s ease;
+    }
+    
+    .photo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    @media (max-width: 500px) {
+      .photo-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body class="mint-bg">
-  <div class="screen">
-    <div class="field-group">
-      <label class="field-label">Código único de la Longitud</label>
-      <input id="longitud" type="text" placeholder="Escribe aquí" class="input-field-dark">
+  <div class="screen" style="max-width: 600px; margin: 0 auto;">
+    <div class="header-banner">
+      <h1>🌳 Titular - Registro</h1>
+      <p>BioTrace Sistema Forestal</p>
     </div>
-    <div class="field-group">
-      <label class="field-label">Volumen</label>
-      <input id="volumen" type="text" placeholder="Escribe aquí" class="input-field-dark">
-    </div>
+    
+    <div class="form-card">
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+      <div class="form-progress">Paso 2 de 2 - Fotos y Finalización</div>
+      
+      <div class="field-group">
+        <label class="field-label">Longitud (metros)</label>
+        <input id="longitud" type="number" step="0.01" placeholder="Ej: 5.5" class="input-field-dark">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Volumen (m³)</label>
+        <input id="volumen" type="number" step="0.01" placeholder="Ej: 2.5" class="input-field-dark">
+      </div>
 
-    <div class="field-group">
-      <label class="field-label">Fotografía del corte transversal</label>
-      <label class="photo-upload" for="foto1">
-        <span class="camera-icon" id="icon1">📷</span>
-        <img id="prev1" class="photo-preview" style="display:none">
-        <input id="foto1" type="file" accept="image/*" capture="environment" style="display:none" onchange="previewImg(this,'prev1','icon1')">
-      </label>
-    </div>
+      <div class="photo-grid">
+        <div class="field-group">
+          <label class="field-label">📸 Corte transversal</label>
+          <label class="photo-upload" for="foto1">
+            <span class="camera-icon" id="icon1">📷</span>
+            <img id="prev1" class="photo-preview" style="display:none">
+            <input id="foto1" type="file" accept="image/*" capture="environment" style="display:none" onchange="previewImg(this,'prev1','icon1')">
+          </label>
+        </div>
 
-    <div class="field-group">
-      <label class="field-label">Fotografía de la troza completa</label>
-      <label class="photo-upload" for="foto2">
-        <span class="camera-icon" id="icon2">📷</span>
-        <img id="prev2" class="photo-preview" style="display:none">
-        <input id="foto2" type="file" accept="image/*" capture="environment" style="display:none" onchange="previewImg(this,'prev2','icon2')">
-      </label>
-    </div>
+        <div class="field-group">
+          <label class="field-label">📸 Troza completa</label>
+          <label class="photo-upload" for="foto2">
+            <span class="camera-icon" id="icon2">📷</span>
+            <img id="prev2" class="photo-preview" style="display:none">
+            <input id="foto2" type="file" accept="image/*" capture="environment" style="display:none" onchange="previewImg(this,'prev2','icon2')">
+          </label>
+        </div>
+      </div>
 
-    <div class="field-group">
-      <label class="field-label">FECHA</label>
-      <input id="fecha" type="date" class="input-field-dark">
-    </div>
+      <div class="field-group">
+        <label class="field-label">Fecha de Registro</label>
+        <input id="fecha" type="date" class="input-field-dark">
+      </div>
 
-    <div id="errMsg" class="alert" style="display:none"></div>
-    <button onclick="generarQR()" class="btn btn-outline-dark">Generar código QR ›</button>
-    <a href="titular_form.html" class="back-link">← Atrás</a>
+      <div id="errMsg" class="alert" style="display:none"></div>
+      <button onclick="generarQR()" class="btn btn-outline-dark">🎯 Generar código QR y Registrar</button>
+    </div>
+    
+    <a href="titular_form.html" class="back-link" style="margin-top: 24px; display: inline-block;">← Atrás</a>
   </div>
   <script>
     if (!sessionStorage.getItem('btl_troza')) location.href = 'titular_form.html';
+    
+    // Establecer fecha de hoy por defecto
+    document.getElementById('fecha').valueAsDate = new Date();
 
     function previewImg(input, prevId, iconId) {
       const file = input.files[0];

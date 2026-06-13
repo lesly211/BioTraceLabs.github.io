@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio Trace Labs – Login</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body class="green-bg">
+    <div class="screen">
+        <div class="logo-row">
+            <div class="logo-icon">S</div>
+            <span class="logo-text">BIO TRACE LABS</span>
+        </div>
+        <h2 class="welcome-title">Bienvenido</h2>
+        <div id="alertBox" class="alert" style="display:none"></div>
+        <div class="login-form">
+            <input type="text" id="roleDisplay" class="input-field" readonly>
+            <input type="email" id="email" placeholder="Correo" class="input-field" autocomplete="email">
+            <input type="password" id="password" placeholder="Contraseña" class="input-field">
+            <button onclick="doLogin()" class="btn btn-light">Iniciar sesión</button>
+        </div>
+        <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+        <a href="../index.html" class="back-link">← Volver</a>
+
+        <!-- Credenciales de prueba -->
+        <div class="demo-box" id="demoBox"></div>
+    </div>
+    <script>
+        const params = new URLSearchParams(location.search);
+        const role = params.get('role') || 'titular';
+        const labels = {
+            titular: 'Titular',
+            chofer: 'Chofer',
+            centro: 'Centro de transformación'
+        };
+        document.getElementById('roleDisplay').value = labels[role] || 'Titular';
+
+        // Credenciales de prueba por rol
+        const usuarios = {
+            titular: {
+                email: 'titular@biotrace.com',
+                password: 'titular2026'
+            },
+            chofer: {
+                email: 'chofer@biotrace.com',
+                password: 'chofer2026'
+            },
+            centro: {
+                email: 'centro@biotrace.com',
+                password: 'centro2026'
+            }
+        };
+
+        // Mostrar caja de credenciales de prueba
+        const creds = usuarios[role];
+        document.getElementById('demoBox').innerHTML = `
+      <p class="demo-title">🔑 Credenciales de prueba</p>
+      <div class="demo-row">
+        <span class="demo-label">Correo</span>
+        <span class="demo-value">${creds.email}</span>
+        <button class="demo-copy" onclick="copiar('email','${creds.email}',this)">Copiar</button>
+      </div>
+      <div class="demo-row">
+        <span class="demo-label">Contraseña</span>
+        <span class="demo-value">${creds.password}</span>
+        <button class="demo-copy" onclick="copiar('password','${creds.password}',this)">Copiar</button>
+      </div>
+      <button class="demo-fill" onclick="rellenar()">✨ Rellenar automático</button>
+    `;
+
+        function copiar(campo, valor, btn) {
+            navigator.clipboard.writeText(valor).catch(() => {});
+            document.getElementById(campo).value = valor;
+            btn.textContent = '✓';
+            setTimeout(() => btn.textContent = 'Copiar', 1500);
+        }
+
+        function rellenar() {
+            document.getElementById('email').value = creds.email;
+            document.getElementById('password').value = creds.password;
+        }
+
+        const destinos = {
+            titular: '../pages/titular_form.html',
+            chofer: '../pages/chofer_dashboard.html',
+            centro: '../pages/centro_dashboard.html'
+        };
+
+        function doLogin() {
+            const email = document.getElementById('email').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const alertBox = document.getElementById('alertBox');
+
+            if (!email || !pass) {
+                alertBox.textContent = 'Por favor ingresa tu correo y contraseña.';
+                alertBox.style.display = 'block';
+                return;
+            }
+
+            // Validar credenciales
+            if (email !== creds.email || pass !== creds.password) {
+                alertBox.textContent = '❌ Correo o contraseña incorrectos. Usa las credenciales de prueba.';
+                alertBox.style.display = 'block';
+                return;
+            }
+
+            alertBox.style.display = 'none';
+            sessionStorage.setItem('btl_role', role);
+            sessionStorage.setItem('btl_email', email);
+            location.href = destinos[role];
+        }
+    </script>
+</body>
+
+</html>

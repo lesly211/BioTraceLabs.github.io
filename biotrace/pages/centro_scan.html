@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escanear QR</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body class="mint-bg">
+  <div class="screen center-screen">
+    <h2 class="section-title">Escanear QR</h2>
+    <p class="scan-hint" id="scanHint">Apunta la cámara al código QR de la troza</p>
+    <div id="reader" class="qr-reader-box"></div>
+
+    <div id="scanResult" style="display:none" class="scan-success-card">
+      <h3 class="scan-success-title">¡Escaneo exitoso!</h3>
+      <h4 class="datos-title">DATOS</h4>
+      <div id="scanData"></div>
+      <a href="centro_dashboard.html" class="btn btn-dark" style="margin-top:20px">REGRESAR AL INICIO</a>
+    </div>
+    <a href="centro_dashboard.html" class="back-link" id="backBtn">← Volver</a>
+  </div>
+  <script>
+    if (sessionStorage.getItem('btl_role') !== 'centro') location.href = '../pages/login.html?role=centro';
+
+    const html5Qr = new Html5Qrcode("reader");
+    html5Qr.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      (decoded) => {
+        html5Qr.stop().catch(() => {});
+        document.getElementById('reader').style.display = 'none';
+        document.getElementById('scanHint').style.display = 'none';
+
+        let data;
+        try { data = JSON.parse(decoded); } catch(e) { data = { raw: decoded }; }
+
+        const labels = {
+          codigo:  'Código único de troza',
+          gps:     'Coordenadas GPS',
+          parcela: 'Número de parcela',
+          especie: 'Especie',
+          dap:     'DAP',
+          raw:     'Datos'
+        };
+        let html = '';
+        for (const [k, label] of Object.entries(labels)) {
+          if (data[k]) html += `
+            <div class="data-field-group">
+              <div class="data-label">${label}</div>
+              <div class="data-value">${data[k]}</div>
+            </div>`;
+        }
+        document.getElementById('scanData').innerHTML = html;
+        document.getElementById('scanResult').style.display = 'block';
+      },
+      () => {}
+    ).catch(() => {
+      document.getElementById('reader').innerHTML = '<p style="padding:20px;color:#fff;text-align:center">No se pudo acceder a la cámara.<br>Usa un navegador compatible (Chrome en Android).</p>';
+    });
+  </script>
+</body>
+</html>

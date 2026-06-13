@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Titular – Fotos y QR</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="mint-bg">
+  <div class="screen">
+    <div class="field-group">
+      <label class="field-label">Código único de la Longitud</label>
+      <input id="longitud" type="text" placeholder="Escribe aquí" class="input-field-dark">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Volumen</label>
+      <input id="volumen" type="text" placeholder="Escribe aquí" class="input-field-dark">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Fotografía del corte transversal</label>
+      <label class="photo-upload" for="foto1">
+        <span class="camera-icon" id="icon1">📷</span>
+        <img id="prev1" class="photo-preview" style="display:none">
+        <input id="foto1" type="file" accept="image/*" capture="environment" style="display:none" onchange="previewImg(this,'prev1','icon1')">
+      </label>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Fotografía de la troza completa</label>
+      <label class="photo-upload" for="foto2">
+        <span class="camera-icon" id="icon2">📷</span>
+        <img id="prev2" class="photo-preview" style="display:none">
+        <input id="foto2" type="file" accept="image/*" capture="environment" style="display:none" onchange="previewImg(this,'prev2','icon2')">
+      </label>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">FECHA</label>
+      <input id="fecha" type="date" class="input-field-dark">
+    </div>
+
+    <div id="errMsg" class="alert" style="display:none"></div>
+    <button onclick="generarQR()" class="btn btn-outline-dark">Generar código QR ›</button>
+    <a href="titular_form.html" class="back-link">← Atrás</a>
+  </div>
+  <script>
+    if (!sessionStorage.getItem('btl_troza')) location.href = 'titular_form.html';
+
+    function previewImg(input, prevId, iconId) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById(prevId).src = e.target.result;
+        document.getElementById(prevId).style.display = 'block';
+        document.getElementById(iconId).style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function generarQR() {
+      const err = document.getElementById('errMsg');
+      const longitud = document.getElementById('longitud').value.trim();
+      const volumen  = document.getElementById('volumen').value.trim();
+      const fecha    = document.getElementById('fecha').value;
+      if (!longitud || !volumen || !fecha) {
+        err.textContent = 'Completa longitud, volumen y fecha.';
+        err.style.display = 'block'; return;
+      }
+      err.style.display = 'none';
+      const troza = JSON.parse(sessionStorage.getItem('btl_troza'));
+      troza.longitud = longitud; troza.volumen = volumen; troza.fecha = fecha;
+      sessionStorage.setItem('btl_troza', JSON.stringify(troza));
+      location.href = 'titular_qr.html';
+    }
+  </script>
+</body>
+</html>

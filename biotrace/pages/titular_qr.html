@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Código QR – Bio Trace Labs</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="cream-bg">
+  <div class="screen center-screen">
+    <h2 class="qr-title">Código QR generado<br>de la troza</h2>
+    <div class="qr-container">
+      <img id="qrImg" class="qr-image" alt="Código QR">
+    </div>
+    <div class="troza-summary" id="resumen"></div>
+    <button onclick="descargar()" class="btn btn-dark">⬇ Descargar QR</button>
+    <a href="../index.html" class="btn btn-outline-teal" style="margin-top:10px">Regresar al inicio</a>
+  </div>
+  <script>
+    const raw = sessionStorage.getItem('btl_troza');
+    if (!raw) { location.href = 'titular_form.html'; }
+    const troza = JSON.parse(raw);
+    const qrData = encodeURIComponent(JSON.stringify(troza));
+    document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${qrData}`;
+
+    const campos = { codigo:'Código', especie:'Especie', parcela:'Parcela', gps:'GPS', fecha:'Fecha' };
+    let html = '';
+    for (const [k, label] of Object.entries(campos)) {
+      if (troza[k]) html += `<p><strong>${label}:</strong> ${troza[k]}</p>`;
+    }
+    document.getElementById('resumen').innerHTML = html;
+
+    function descargar() {
+      const a = document.createElement('a');
+      a.href = document.getElementById('qrImg').src;
+      a.download = `troza_${troza.codigo || 'qr'}.png`;
+      a.click();
+    }
+  </script>
+</body>
+</html>

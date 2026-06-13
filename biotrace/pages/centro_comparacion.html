@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comparación de Trozas - BIO TRACE LABS</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .comparison-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .result-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .result-header {
+      background: #f0fdf4;
+      border: 2px solid #86efac;
+      padding: 20px;
+      border-radius: 12px;
+      width: 100%;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .result-header.rejected {
+      background: #fef2f2;
+      border-color: #fca5a5;
+    }
+
+    .result-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #166534;
+      margin-bottom: 8px;
+    }
+
+    .result-header.rejected .result-title {
+      color: #991b1b;
+    }
+
+    .result-subtitle {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .images-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+      margin: 20px 0;
+    }
+
+    .image-box {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 12px;
+      border: 2px solid #e5e7eb;
+      text-align: center;
+    }
+
+    .image-box img {
+      width: 100%;
+      height: 180px;
+      object-fit: contain;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .image-label {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 600;
+    }
+
+    .similarity-section {
+      width: 100%;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin: 20px 0;
+    }
+
+    .similarity-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .similarity-label {
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .similarity-value {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .similarity-value.high {
+      color: #166534;
+    }
+
+    .similarity-value.low {
+      color: #991b1b;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 12px;
+      background: #e5e7eb;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      transition: width 1s ease;
+      border-radius: 6px;
+    }
+
+    .progress-fill.high {
+      background: linear-gradient(90deg, #166534, #86efac);
+    }
+
+    .progress-fill.low {
+      background: linear-gradient(90deg, #991b1b, #fca5a5);
+    }
+
+    .message-box {
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .message-box.success {
+      background: #dcfce7;
+      border-left: 4px solid #166534;
+      color: #166534;
+    }
+
+    .message-box.error {
+      background: #fee2e2;
+      border-left: 4px solid #991b1b;
+      color: #991b1b;
+    }
+
+    .metrics-details {
+      background: #f8f9fa;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .metric-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .metric-item:last-child {
+      border-bottom: none;
+    }
+
+    @media (max-width: 768px) {
+      .images-comparison {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="mint-bg">
+  <!-- Form View -->
+  <div class="screen" id="formView">
+    <div class="comparison-container">
+      <h2 class="module-title" style="text-align: center; margin-bottom: 24px;">
+        Verificación por Comparación de Imágenes
+      </h2>
+      
+      <div class="field-group">
+        <label class="field-label">Código del trozo recibido *</label>
+        <input id="codigoTrozo" type="text" class="input-field-dark" placeholder="TRZ-2026-LOT-000001">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Fotografía del corte transversal *</label>
+        <p style="font-size: 12px; color: #666; margin-bottom: 8px;">
+          Toma una foto del corte transversal de la troza recibida. Se comparará automáticamente con la foto original.
+        </p>
+        <label class="photo-upload" for="fotoCorte">
+          <span class="camera-icon" id="icon1">📸</span>
+          <img id="prev1" class="photo-preview" style="display:none">
+          <input id="fotoCorte" type="file" accept="image/*" capture="environment" style="display:none" onchange="previewImg(this,'prev1','icon1')">
+        </label>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Observaciones</label>
+        <textarea id="observaciones" class="input-field-dark" rows="3" placeholder="Estado de la madera, condiciones de recepción..."></textarea>
+      </div>
+
+      <div id="errMsg" class="alert" style="display:none"></div>
+      
+      <button onclick="realizarComparacion()" class="btn btn-outline-dark" style="width: 100%;">
+        🔬 Registrar y Comparar Imágenes ›
+      </button>
+      
+      <a href="centro_dashboard.html" class="back-link">← Volver</a>
+    </div>
+  </div>
+
+  <!-- Loading View -->
+  <div class="screen center-screen" id="loadingView" style="display:none">
+    <div class="dark-teal-header-full">
+      <h3 class="module-title">Procesando comparación de imágenes</h3>
+    </div>
+    <div style="font-size:130px; margin:32px 0">🔬</div>
+    <p class="searching-text">Analizando patrones de madera...</p>
+    <p style="font-size: 13px; color: #666; margin-top: 8px;">
+      Detectando círculo del corte<br>
+      Comparando estructuras y anillos<br>
+      Calculando similitud
+    </p>
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Result View -->
+  <div class="screen" id="resultView" style="display:none">
+    <div class="result-screen">
+      <div id="resultContent"></div>
+      <a href="centro_dashboard.html" class="btn btn-dark" style="margin-top:20px; width: 100%; max-width: 300px;">
+        REGRESAR AL INICIO
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Verificar autenticación
+    if (sessionStorage.getItem('btl_role') !== 'centro') {
+      location.href = '../pages/login.html?role=centro';
+    }
+
+    // Obtener ID del centro (puedes ajustar esto según tu sistema de auth)
+    const CENTRO_ID = sessionStorage.getItem('btl_centro_id') || 1;
+    const API_BASE = window.location.origin;
+
+    function previewImg(input, prevId, iconId) {
+      const file = input.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById(prevId).src = e.target.result;
+        document.getElementById(prevId).style.display = 'block';
+        document.getElementById(iconId).style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function realizarComparacion() {
+      const codigo = document.getElementById('codigoTrozo').value.trim();
+      const fotoInput = document.getElementById('fotoCorte');
+      const observaciones = document.getElementById('observaciones').value;
+      const errEl = document.getElementById('errMsg');
+
+      // Validaciones
+      if (!codigo) {
+        errEl.textContent = 'Por favor ingresa el código del trozo.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      if (!fotoInput.files[0]) {
+        errEl.textContent = 'Por favor sube una foto del corte transversal.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      errEl.style.display = 'none';
+
+      // Mostrar loading
+      document.getElementById('formView').style.display = 'none';
+      document.getElementById('loadingView').style.display = 'flex';
+
+      try {
+        // Preparar FormData
+        const formData = new FormData();
+        formData.append('centro_id', CENTRO_ID);
+        formData.append('codigo_trozo', codigo);
+        formData.append('observaciones', observaciones);
+        formData.append('foto_corteza', fotoInput.files[0]);
+
+        // Llamar a la API de comparación
+        const response = await fetch(`${API_BASE}/api/traz/recepcion`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        // Ocultar loading
+        document.getElementById('loadingView').style.display = 'none';
+
+        if (result.success) {
+          // Mostrar resultado
+          mostrarResultado(result);
+          document.getElementById('resultView').style.display = 'flex';
+        } else {
+          // Mostrar error
+          alert('Error: ' + (result.error || 'No se pudo procesar la comparación'));
+          document.getElementById('formView').style.display = 'block';
+        }
+
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('loadingView').style.display = 'none';
+        alert('Error de conexión. Verifica que el servidor esté corriendo.');
+        document.getElementById('formView').style.display = 'block';
+      }
+    }
+
+    function mostrarResultado(data) {
+      const { resultado, motivo_resultado, similitud_porcentaje, comparacion_imagenes, verificacion, foto_original_url, foto_recepcion_url } = data;
+      
+      const aprobado = resultado === 'APROBADO';
+      const tieneComparacion = comparacion_imagenes && comparacion_imagenes.success;
+      const trozo = verificacion?.trozo || {};
+
+      let html = `
+        <div class="result-header ${aprobado ? '' : 'rejected'}">
+          <div class="result-title">${aprobado ? '✅ APROBADO' : '❌ RECHAZADO'}</div>
+          <div class="result-subtitle">${motivo_resultado || ''}</div>
+        </div>
+      `;
+
+      // Información del trozo
+      if (trozo.codigo_unico_trozo) {
+        html += `
+          <div class="similarity-section">
+            <h4 style="margin: 0 0 16px 0; color: #0d3b2e;">Información del Trozo</h4>
+            <div class="metric-item">
+              <span>Código:</span>
+              <span style="font-weight: 600;">${trozo.codigo_unico_trozo}</span>
+            </div>
+            <div class="metric-item">
+              <span>Especie:</span>
+              <span style="font-weight: 600;">${trozo.especie || '—'}</span>
+            </div>
+            <div class="metric-item">
+              <span>Parcela:</span>
+              <span>${trozo.numero_parcela || '—'}</span>
+            </div>
+            <div class="metric-item">
+              <span>DAP:</span>
+              <span>${trozo.dap_cm || '—'} cm</span>
+            </div>
+            <div class="metric-item">
+              <span>Titular:</span>
+              <span>${trozo.titular_nombre || '—'}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Comparación de imágenes
+      if (tieneComparacion) {
+        const coincide = comparacion_imagenes.coincide;
+        const metricas = comparacion_imagenes.metricas_detalladas || {};
+        
+        html += `
+          <div class="similarity-section">
+            <h4 style="margin: 0 0 16px 0; color: #0d3b2e;">📸 Comparación de Imágenes</h4>
+            
+            ${foto_original_url && foto_recepcion_url ? `
+              <div class="images-comparison">
+                <div class="image-box">
+                  <img src="${foto_original_url}" alt="Foto Original">
+                  <div class="image-label">📷 Foto Original (Titular)</div>
+                </div>
+                <div class="image-box">
+                  <img src="${foto_recepcion_url}" alt="Foto Recepción">
+                  <div class="image-label">📷 Foto Recepción (Centro)</div>
+                </div>
+              </div>
+            ` : ''}
+            
+            <div class="similarity-row">
+              <span class="similarity-label">Similitud Total:</span>
+              <span class="similarity-value ${coincide ? 'high' : 'low'}">
+                ${similitud_porcentaje}% - ${comparacion_imagenes.nivel_similitud}
+              </span>
+            </div>
+            
+            <div class="progress-bar">
+              <div class="progress-fill ${coincide ? 'high' : 'low'}" 
+                   style="width: ${similitud_porcentaje}%"></div>
+            </div>
+            
+            <div class="message-box ${coincide ? 'success' : 'error'}">
+              ${comparacion_imagenes.mensaje}
+            </div>
+            
+            <details>
+              <summary style="cursor: pointer; font-weight: 600; margin-bottom: 12px;">
+                Ver Métricas Detalladas
+              </summary>
+              <div class="metrics-details">
+                <div class="metric-item">
+                  <span>SSIM (Estructura):</span>
+                  <span style="font-weight: 600;">${metricas.ssim || 0}%</span>
+                </div>
+                <div class="metric-item">
+                  <span>Histograma (Color):</span>
+                  <span style="font-weight: 600;">${metricas.histograma || 0}%</span>
+                </div>
+                <div class="metric-item">
+                  <span>Features (Patrones):</span>
+                  <span style="font-weight: 600;">${metricas.features || 0}%</span>
+                </div>
+                <div class="metric-item">
+                  <span>Coincidencias encontradas:</span>
+                  <span style="font-weight: 600;">${metricas.num_coincidencias_features || 0} matches</span>
+                </div>
+              </div>
+            </details>
+          </div>
+        `;
+      }
+
+      document.getElementById('resultContent').innerHTML = html;
+    }
+  </script>
+</body>
+</html>

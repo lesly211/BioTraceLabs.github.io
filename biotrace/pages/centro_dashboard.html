@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centro de Transformación</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="mint-bg">
+  <div class="screen center-screen">
+    <h1 class="section-title big">INICIO</h1>
+    <div class="process-question">
+      <h2 class="process-q-text">¿QUÉ PROCESO<br>REALIZARÁ?</h2>
+      <a href="centro_scan.html" class="btn btn-dark-teal">Escanear QR</a>
+      <div class="qr-illustration">🤳</div>
+      <a href="centro_comparacion.html" class="btn btn-dark-teal">REALIZAR<br>COMPARACIÓN</a>
+      <div style="font-size:64px; margin-top:8px">🪵</div>
+    </div>
+    <a href="../index.html" class="back-link">← Salir</a>
+  </div>
+  <script>
+    if (sessionStorage.getItem('btl_role') !== 'centro') location.href = '../pages/login.html?role=centro';
+  </script>
+</body>
+</html>

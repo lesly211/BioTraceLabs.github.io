@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Titular – Datos de troza</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="mint-bg">
+  <div class="screen">
+    <h2 class="section-title">Bienvenido</h2>
+    <p class="section-subtitle">Ingrese los siguientes datos:</p>
+
+    <div class="field-group">
+      <label class="field-label">Código único de troza</label>
+      <input id="codigo" type="text" placeholder="Escribe el código" class="input-field-dark">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Coordenadas GPS</label>
+      <input id="gps" type="text" placeholder="Escribe las coordenadas" class="input-field-dark">
+      <button class="btn-gps" onclick="getGPS()">📍 Obtener GPS automático</button>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Número de parcela</label>
+      <input id="parcela" type="text" placeholder="Escribe el número de parcela" class="input-field-dark">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Especie</label>
+      <input id="especie" type="text" placeholder="Escribe el nombre de la especie" class="input-field-dark">
+    </div>
+    <div class="field-group">
+      <label class="field-label">DAP</label>
+      <input id="dap" type="text" placeholder="Escribe el DAP" class="input-field-dark">
+    </div>
+
+    <div id="errMsg" class="alert" style="display:none"></div>
+    <button onclick="siguiente()" class="btn btn-outline-dark">SIGUIENTE ›</button>
+    <a href="../index.html" class="back-link">← Salir</a>
+  </div>
+  <script>
+    if (!sessionStorage.getItem('btl_role')) location.href = '../pages/login.html?role=titular';
+
+    function getGPS() {
+      const btn = document.querySelector('.btn-gps');
+      if (!navigator.geolocation) { alert('Tu navegador no soporta GPS.'); return; }
+      btn.textContent = '⏳ Obteniendo...'; btn.disabled = true;
+      navigator.geolocation.getCurrentPosition(pos => {
+        document.getElementById('gps').value = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+        btn.textContent = '📍 Obtener GPS automático'; btn.disabled = false;
+      }, err => {
+        alert('No se pudo obtener GPS: ' + err.message);
+        btn.textContent = '📍 Obtener GPS automático'; btn.disabled = false;
+      }, { enableHighAccuracy: true, timeout: 10000 });
+    }
+
+    function siguiente() {
+      const err = document.getElementById('errMsg');
+      const fields = ['codigo','gps','parcela','especie','dap'];
+      for (const f of fields) {
+        if (!document.getElementById(f).value.trim()) {
+          err.textContent = 'Por favor completa todos los campos.';
+          err.style.display = 'block';
+          return;
+        }
+      }
+      err.style.display = 'none';
+      const data = {};
+      fields.forEach(f => data[f] = document.getElementById(f).value.trim());
+      sessionStorage.setItem('btl_troza', JSON.stringify(data));
+      location.href = 'titular_form2.html';
+    }
+  </script>
+</body>
+</html>

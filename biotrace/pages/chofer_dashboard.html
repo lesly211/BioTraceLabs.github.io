@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chofer – Módulo de registro</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="dark-teal-bg">
+  <div class="screen">
+    <div class="chofer-header">
+      <div class="logo-row">
+        <div class="logo-icon">S</div>
+        <div>
+          <span class="logo-text">SHONOS</span><br>
+          <span class="logo-sub">L O G Í S T I C A</span>
+        </div>
+      </div>
+    </div>
+    <div class="chofer-card">
+      <h2 class="section-title dark">Modulo de registro</h2>
+      <div class="driver-photo-container">
+        <label for="driverPhoto" class="driver-photo-label" title="Toca para cambiar foto">
+          <img id="driverPhotoPreview" src="https://placehold.co/200x200/cccccc/666?text=Foto" class="driver-photo" alt="Foto conductor">
+          <input type="file" id="driverPhoto" accept="image/*" capture="user" style="display:none" onchange="previewDriver(this)">
+        </label>
+      </div>
+      <div class="info-row"><span class="info-label">PLACA:</span>     <input type="text" id="placa"     placeholder="ABC-123"       class="info-input"></div>
+      <div class="info-row"><span class="info-label">CONDUCTOR:</span> <input type="text" id="conductor" placeholder="Nombre completo" class="info-input"></div>
+      <div class="info-row"><span class="info-label">DNI:</span>       <input type="text" id="dni"       placeholder="12345678"      class="info-input"></div>
+      <button onclick="guardar()" class="btn btn-teal" style="margin-top:20px">Guardar registro</button>
+      <div id="msg" class="success-msg" style="display:none">✅ Registro guardado correctamente</div>
+    </div>
+    <a href="../index.html" class="back-link light">← Salir</a>
+  </div>
+  <script>
+    if (sessionStorage.getItem('btl_role') !== 'chofer') location.href = '../pages/login.html?role=chofer';
+
+    function previewDriver(input) {
+      const file = input.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => { document.getElementById('driverPhotoPreview').src = e.target.result; };
+      reader.readAsDataURL(file);
+    }
+
+    function guardar() {
+      const placa     = document.getElementById('placa').value.trim();
+      const conductor = document.getElementById('conductor').value.trim();
+      const dni       = document.getElementById('dni').value.trim();
+      if (!placa || !conductor || !dni) { alert('Completa todos los campos.'); return; }
+      const msg = document.getElementById('msg');
+      msg.style.display = 'block';
+      setTimeout(() => msg.style.display = 'none', 3000);
+    }
+  </script>
+</body>
+</html>

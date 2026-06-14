@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tracking - BioTrace</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+    }
+    
+    .container {
+      padding: 15px;
+      max-width: 100%;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #0d3b2e 0%, #1a5c47 100%);
+      color: white;
+      padding: 20px 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      margin: 0 0 5px 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    
+    .header p {
+      margin: 0;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    
+    .status-bar {
+      background: white;
+      padding: 12px 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+    
+    .status-badge.entregado {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    /* Mapa del Perú */
+    .map-container {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .map-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0d3b2e;
+      margin: 0 0 15px 0;
+      text-align: center;
+    }
+    
+    .peru-map {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    
+    .map-svg {
+      width: 100%;
+      height: auto;
+      max-height: 500px;
+    }
+    
+    .department {
+      fill: #e8f5e9;
+      stroke: #0d3b2e;
+      stroke-width: 0.5;
+      transition: all 0.3s;
+    }
+    
+    .department:hover {
+      fill: #c8e6c9;
+    }
+    
+    .department.origin {
+      fill: #4caf50;
+      animation: pulse 2s infinite;
+    }
+    
+    .department.destination {
+      fill: #2196f3;
+      animation: pulse 2s infinite;
+    }
+    
+    .route-line {
+      stroke: #ff5722;
+      stroke-width: 3;
+      stroke-dasharray: 10, 5;
+      animation: dash 30s linear infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    @keyframes dash {
+      to { stroke-dashoffset: -1000; }
+    }
+    
+    .marker {
+      animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+    
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      border: 1px solid #333;
+    }
+    
+    /* Cards de información */
+    .info-card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0d3b2e;
+      margin: 0 0 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    
+    .info-label {
+      font-size: 12px;
+      color: #666;
+      font-weight: 500;
+    }
+    
+    .info-value {
+      font-size: 13px;
+      color: #1f2937;
+      font-weight: 600;
+      text-align: right;
+      max-width: 60%;
+      word-break: break-word;
+    }
+    
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 30px;
+    }
+    
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #e5e7eb;
+    }
+    
+    .timeline-item {
+      position: relative;
+      padding-bottom: 20px;
+    }
+    
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+    
+    .timeline-dot {
+      position: absolute;
+      left: -26px;
+      top: 5px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #0d3b2e;
+    }
+    
+    .timeline-dot.active {
+      width: 14px;
+      height: 14px;
+      top: 3px;
+      left: -28px;
+      background: #10b981;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+    }
+    
+    .timeline-content {
+      background: #f9fafb;
+      padding: 10px 12px;
+      border-radius: 8px;
+    }
+    
+    .timeline-time {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    
+    .timeline-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 3px;
+    }
+    
+    .timeline-desc {
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+    
+    .btn-back {
+      background: #0d3b2e;
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+      text-decoration: none;
+      font-weight: 600;
+      display: block;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    
+    .loading, .error {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .loading-icon {
+      font-size: 48px;
+      animation: spin 2s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Tablet y Desktop */
+    @media (min-width: 768px) {
+      .container {
+        padding: 20px;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+      
+      .header h1 {
+        font-size: 28px;
+      }
+      
+      .map-svg {
+        max-height: 600px;
+      }
+      
+      .info-row {
+        flex-direction: row;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚛 Tracking de Transporte</h1>
+      <p>Seguimiento en tiempo real</p>
+    </div>
+    
+    <div id="loading" class="info-card loading">
+      <div class="loading-icon">⏳</div>
+      <p>Cargando información...</p>
+    </div>
+    
+    <div id="error" class="info-card" style="display: none;">
+      <div class="error" id="errorMessage"></div>
+    </div>
+    
+    <div id="content" style="display: none;">
+      <!-- Estado -->
+      <div class="status-bar">
+        <div class="status-badge" id="estadoBadge">EN TRÁNSITO</div>
+      </div>
+      
+      <!-- Mapa del Perú -->
+      <div class="map-container">
+        <div class="map-title">🗺️ Ruta de Transporte</div>
+        
+        <svg class="map-svg" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+          <!-- Mapa simplificado del Perú por departamentos -->
+          
+          <!-- Tumbes -->
+          <path id="dept-tumbes" class="department" d="M 50,30 L 80,30 L 80,50 L 50,50 Z" data-dept="Tumbes"/>
+          
+          <!-- Piura -->
+          <path id="dept-piura" class="department" d="M 50,50 L 100,50 L 100,90 L 50,90 Z" data-dept="Piura"/>
+          
+          <!-- Lambayeque -->
+          <path id="dept-lambayeque" class="department" d="M 100,50 L 140,50 L 140,80 L 100,80 Z" data-dept="Lambayeque"/>
+          
+          <!-- Cajamarca -->
+          <path id="dept-cajamarca" class="department" d="M 100,80 L 160,80 L 160,130 L 100,130 Z" data-dept="Cajamarca"/>
+          
+          <!-- Amazonas -->
+          <path id="dept-amazonas" class="department" d="M 160,80 L 220,80 L 220,140 L 160,140 Z" data-dept="Amazonas"/>
+          
+          <!-- Loreto -->
+          <path id="dept-loreto" class="department" d="M 220,40 L 320,40 L 320,180 L 220,180 Z" data-dept="Loreto"/>
+          
+          <!-- San Martín -->
+          <path id="dept-sanmartin" class="department" d="M 160,140 L 220,140 L 220,200 L 160,200 Z" data-dept="San Martín"/>
+          
+          <!-- La Libertad -->
+          <path id="dept-lalibertad" class="department" d="M 100,130 L 160,130 L 160,180 L 100,180 Z" data-dept="La Libertad"/>
+          
+          <!-- Ancash -->
+          <path id="dept-ancash" class="department" d="M 80,180 L 140,180 L 140,230 L 80,230 Z" data-dept="Ancash"/>
+          
+          <!-- Huánuco -->
+          <path id="dept-huanuco" class="department" d="M 140,180 L 200,180 L 200,240 L 140,240 Z" data-dept="Huánuco"/>
+          
+          <!-- Ucayali -->
+          <path id="dept-ucayali" class="department" d="M 220,180 L 320,180 L 320,280 L 220,280 Z" data-dept="Ucayali"/>
+          
+          <!-- Lima -->
+          <path id="dept-lima" class="department" d="M 60,230 L 120,230 L 120,290 L 60,290 Z" data-dept="Lima"/>
+          
+          <!-- Pasco -->
+          <path id="dept-pasco" class="department" d="M 120,230 L 170,230 L 170,270 L 120,270 Z" data-dept="Pasco"/>
+          
+          <!-- Junín -->
+          <path id="dept-junin" class="department" d="M 120,270 L 180,270 L 180,320 L 120,320 Z" data-dept="Junín"/>
+          
+          <!-- Madre de Dios -->
+          <path id="dept-madrededios" class="department" d="M 220,280 L 320,280 L 320,380 L 220,380 Z" data-dept="Madre de Dios"/>
+          
+          <!-- Cusco -->
+          <path id="dept-cusco" class="department" d="M 160,360 L 220,360 L 220,430 L 160,430 Z" data-dept="Cusco"/>
+          
+          <!-- Huancavelica -->
+          <path id="dept-huancavelica" class="department" d="M 90,320 L 140,320 L 140,370 L 90,370 Z" data-dept="Huancavelica"/>
+          
+          <!-- Ica -->
+          <path id="dept-ica" class="department" d="M 50,340 L 100,340 L 100,390 L 50,390 Z" data-dept="Ica"/>
+          
+          <!-- Ayacucho -->
+          <path id="dept-ayacucho" class="department" d="M 100,360 L 160,360 L 160,410 L 100,410 Z" data-dept="Ayacucho"/>
+          
+          <!-- Apurímac -->
+          <path id="dept-apurimac" class="department" d="M 120,410 L 170,410 L 170,460 L 120,460 Z" data-dept="Apurímac"/>
+          
+          <!-- Arequipa -->
+          <path id="dept-arequipa" class="department" d="M 50,420 L 120,420 L 120,490 L 50,490 Z" data-dept="Arequipa"/>
+          
+          <!-- Puno -->
+          <path id="dept-puno" class="department" d="M 120,460 L 200,460 L 200,540 L 120,540 Z" data-dept="Puno"/>
+          
+          <!-- Moquegua -->
+          <path id="dept-moquegua" class="department" d="M 50,490 L 100,490 L 100,530 L 50,530 Z" data-dept="Moquegua"/>
+          
+          <!-- Tacna -->
+          <path id="dept-tacna" class="department" d="M 50,530 L 100,530 L 100,560 L 50,560 Z" data-dept="Tacna"/>
+          
+          <!-- Línea de ruta (se dibujará dinámicamente) -->
+          <line id="routeLine" class="route-line" x1="0" y1="0" x2="0" y2="0" style="display:none"/>
+          
+          <!-- Marcador Origen -->
+          <g id="markerOrigin" class="marker" style="display:none">
+            <circle cx="0" cy="0" r="8" fill="#4caf50" stroke="white" stroke-width="2"/>
+            <text x="0" y="5" text-anchor="middle" fill="white" font-size="10" font-weight="bold">O</text>
+          </g>
+          
+          <!-- Marcador Destino -->
+          <g id="markerDestination" class="marker" style="display:none">
+            <circle cx="0" cy="0" r="8" fill="#2196f3" stroke="white" stroke-width="2"/>
+            <text x="0" y="5" text-anchor="middle" fill="white" font-size="10" font-weight="bold">D</text>
+          </g>
+          
+          <!-- Camión en movimiento -->
+          <g id="truck" class="marker" style="display:none">
+            <text x="0" y="5" text-anchor="middle" font-size="20">🚛</text>
+          </g>
+        </svg>
+        
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-color" style="background: #4caf50;"></div>
+            <span>Origen</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color" style="background: #2196f3;"></div>
+            <span>Destino</span>
+          </div>
+          <div class="legend-item">
+            <span>🚛 En tránsito</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Info del Trozo -->
+      <div class="info-card">
+        <div class="card-title">📦 Información del Trozo</div>
+        <div class="info-row">
+          <span class="info-label">Código</span>
+          <span class="info-value" id="codigoTrozo">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Especie</span>
+          <span class="info-value" id="especie">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Volumen</span>
+          <span class="info-value" id="volumen">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Titular</span>
+          <span class="info-value" id="titular">-</span>
+        </div>
+      </div>
+      
+      <!-- Info del Transporte -->
+      <div class="info-card">
+        <div class="card-title">🚛 Transporte</div>
+        <div class="info-row">
+          <span class="info-label">Origen</span>
+          <span class="info-value" id="origen">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Destino</span>
+          <span class="info-value" id="destino">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Placa</span>
+          <span class="info-value" id="placa">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Chofer</span>
+          <span class="info-value" id="choferNombre">-</span>
+        </div>
+      </div>
+      
+      <!-- Timeline -->
+      <div class="info-card">
+        <div class="card-title">📍 Línea de Tiempo</div>
+        <div class="timeline" id="timeline"></div>
+      </div>
+      
+      <a href="javascript:history.back()" class="btn-back">← Volver al Dashboard</a>
+    </div>
+  </div>
+  
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const codigoTrozo = params.get('codigo');
+    
+    // Coordenadas aproximadas del centro de cada departamento
+    const departmentCoords = {
+      'tumbes': {x: 65, y: 40}, 'piura': {x: 75, y: 70}, 'lambayeque': {x: 120, y: 65},
+      'cajamarca': {x: 130, y: 105}, 'amazonas': {x: 190, y: 110}, 'loreto': {x: 270, y: 110},
+      'san martin': {x: 190, y: 170}, 'san martín': {x: 190, y: 170},
+      'la libertad': {x: 130, y: 155}, 'ancash': {x: 110, y: 205},
+      'huanuco': {x: 170, y: 210}, 'huánuco': {x: 170, y: 210},
+      'ucayali': {x: 270, y: 230}, 'lima': {x: 90, y: 260},
+      'pasco': {x: 145, y: 250}, 'junin': {x: 150, y: 295}, 'junín': {x: 150, y: 295},
+      'madre de dios': {x: 270, y: 330}, 'cusco': {x: 190, y: 395},
+      'huancavelica': {x: 115, y: 345}, 'ica': {x: 75, y: 365},
+      'ayacucho': {x: 130, y: 385}, 'apurimac': {x: 145, y: 435}, 'apurímac': {x: 145, y: 435},
+      'arequipa': {x: 85, y: 455}, 'puno': {x: 160, y: 500},
+      'moquegua': {x: 75, y: 510}, 'tacna': {x: 75, y: 545}
+    };
+    
+    if (!codigoTrozo) {
+      showError('No se proporcionó código de trozo');
+    } else {
+      cargarTracking(codigoTrozo);
+    }
+    
+    async function cargarTracking(codigo) {
+      try {
+        const resp = await fetch(`http://localhost:5000/api/traz/trozo/${codigo}`);
+        const result = await resp.json();
+        
+        if (!result.success || !result.trozo) {
+          showError('Trozo no encontrado');
+          return;
+        }
+        
+        const trozo = result.trozo;
+        
+        // Llenar información
+        document.getElementById('codigoTrozo').textContent = trozo.codigo_unico_trozo;
+        document.getElementById('especie').textContent = trozo.especie;
+        document.getElementById('volumen').textContent = `${trozo.volumen_m3} m³`;
+        document.getElementById('titular').textContent = trozo.titular_nombre || '-';
+        
+        // Estado
+        const badge = document.getElementById('estadoBadge');
+        if (trozo.estado === 'RECIBIDO') {
+          badge.textContent = 'ENTREGADO';
+          badge.classList.add('entregado');
+        } else if (trozo.estado === 'EN_TRANSITO') {
+          badge.textContent = 'EN TRÁNSITO';
+        } else {
+          badge.textContent = trozo.estado || 'REGISTRADO';
+        }
+        
+        // Simular origen y destino desde observaciones o plan
+        const origenDept = extractDepartment(trozo.plan_manejo_referencia) || 'loreto';
+        const destinoDept = 'lima'; // Por defecto Lima como destino
+        
+        document.getElementById('origen').textContent = capitalizeWords(origenDept);
+        document.getElementById('destino').textContent = capitalizeWords(destinoDept);
+        document.getElementById('placa').textContent = '-';
+        document.getElementById('choferNombre').textContent = '-';
+        
+        // Dibujar ruta en el mapa
+        dibujarRuta(origenDept, destinoDept, trozo.estado);
+        
+        // Timeline
+        crearTimeline(trozo);
+        
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+        
+      } catch (error) {
+        console.error('Error:', error);
+        showError('Error al cargar tracking');
+      }
+    }
+    
+    function extractDepartment(planCode) {
+      if (!planCode) return null;
+      const parts = planCode.split('-');
+      if (parts.length >= 3) {
+        const region = parts[2].toLowerCase();
+        // Mapear códigos de región a departamentos
+        const regionMap = {
+          'lor': 'loreto', 'ucl': 'ucayali', 'mdl': 'madre de dios',
+          'sma': 'san martin', 'csc': 'cusco', 'jun': 'junin',
+          'psc': 'pasco', 'hun': 'huanuco', 'lim': 'lima'
+        };
+        return regionMap[region] || null;
+      }
+      return null;
+    }
+    
+    function capitalizeWords(str) {
+      return str.split(' ').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+    }
+    
+    function dibujarRuta(origen, destino, estado) {
+      const origenCoords = departmentCoords[origen.toLowerCase()];
+      const destinoCoords = departmentCoords[destino.toLowerCase()];
+      
+      if (!origenCoords || !destinoCoords) return;
+      
+      // Marcar departamentos
+      const origenDept = document.querySelector(`[data-dept="${capitalizeWords(origen)}"]`);
+      const destinoDept = document.querySelector(`[data-dept="${capitalizeWords(destino)}"]`);
+      
+      if (origenDept) origenDept.classList.add('origin');
+      if (destinoDept) destinoDept.classList.add('destination');
+      
+      // Dibujar línea de ruta
+      const line = document.getElementById('routeLine');
+      line.setAttribute('x1', origenCoords.x);
+      line.setAttribute('y1', origenCoords.y);
+      line.setAttribute('x2', destinoCoords.x);
+      line.setAttribute('y2', destinoCoords.y);
+      line.style.display = 'block';
+      
+      // Marcadores
+      const markerO = document.getElementById('markerOrigin');
+      markerO.setAttribute('transform', `translate(${origenCoords.x}, ${origenCoords.y})`);
+      markerO.style.display = 'block';
+      
+      const markerD = document.getElementById('markerDestination');
+      markerD.setAttribute('transform', `translate(${destinoCoords.x}, ${destinoCoords.y})`);
+      markerD.style.display = 'block';
+      
+      // Camión en tránsito
+      if (estado === 'EN_TRANSITO') {
+        const truck = document.getElementById('truck');
+        const midX = (origenCoords.x + destinoCoords.x) / 2;
+        const midY = (origenCoords.y + destinoCoords.y) / 2;
+        truck.setAttribute('transform', `translate(${midX}, ${midY})`);
+        truck.style.display = 'block';
+      }
+    }
+    
+    function crearTimeline(trozo) {
+      const timeline = document.getElementById('timeline');
+      const fecha = new Date(trozo.fecha_hora);
+      
+      let html = `
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-time">${fecha.toLocaleString('es-PE', {dateStyle: 'short', timeStyle: 'short'})}</div>
+            <div class="timeline-title">✅ Trozo Registrado</div>
+            <div class="timeline-desc">Registrado en el sistema</div>
+          </div>
+        </div>
+      `;
+      
+      if (trozo.estado === 'EN_TRANSITO' || trozo.estado === 'RECIBIDO') {
+        html += `
+          <div class="timeline-item">
+            <div class="timeline-dot ${trozo.estado === 'EN_TRANSITO' ? 'active' : ''}"></div>
+            <div class="timeline-content">
+              <div class="timeline-time">En proceso</div>
+              <div class="timeline-title">🚛 En Tránsito</div>
+              <div class="timeline-desc">Transportando al centro</div>
+            </div>
+          </div>
+        `;
+      }
+      
+      if (trozo.estado === 'RECIBIDO') {
+        html += `
+          <div class="timeline-item">
+            <div class="timeline-dot active"></div>
+            <div class="timeline-content">
+              <div class="timeline-time">Completado</div>
+              <div class="timeline-title">🏭 Recibido</div>
+              <div class="timeline-desc">Verificado en centro</div>
+            </div>
+          </div>
+        `;
+      }
+      
+      timeline.innerHTML = html;
+    }
+    
+    function showError(message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('errorMessage').innerHTML = `
+        <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+        <p>${message}</p>
+        <a href="javascript:history.back()" class="btn-back" style="margin-top: 15px;">← Volver</a>
+      `;
+    }
+  </script>
+</body>
+</html>

@@ -33,7 +33,8 @@ async function cargarBienvenida() {
     const statusLabel = document.querySelector('.status-label');
     if (data.api_configurada) {
       statusDot.classList.add('online');
-      statusLabel.textContent = 'Gemini Vision activo';
+      const proveedor = data.proveedor || 'IA';
+      statusLabel.textContent = `${proveedor} activo`;
     } else {
       statusDot.classList.add('demo');
       statusLabel.textContent = 'Modo demo';
@@ -57,9 +58,10 @@ function agregarMensajeBienvenida(stats, apiActiva) {
       <div class="welcome-card">
         <div class="welcome-title">🌿 Bienvenido al Verificador Forestal OSINFOR</div>
         <div class="welcome-body">
-          Soy tu asistente de verificación forestal con IA. Puedo identificar árboles 
-          mediante fotos y verificar si están incluidos en el 
-          <strong>inventario forestal</strong> y <strong>planes de manejo vigentes</strong>.
+          Soy tu asistente de verificación forestal con IA. Puedo:
+          <br/>💬 <strong>Responder tus preguntas</strong> sobre especies forestales, trazabilidad y conservación
+          <br/>📷 <strong>Identificar árboles</strong> mediante fotos y verificar si están en el 
+          <strong>inventario forestal</strong> y <strong>planes de manejo vigentes</strong>
           <br/><br/>
           📊 Estado del inventario:
           <span class="stat-inline"> ${stats.total_arboles ?? 0} árboles</span> ·
@@ -68,9 +70,9 @@ function agregarMensajeBienvenida(stats, apiActiva) {
         </div>
         <div class="welcome-hint">
           ${apiActiva
-            ? '✅ API de Google Gemini activa — Identificación real de árboles habilitada.'
-            : '⚠️ Modo demo activo — Configure su GEMINI_API_KEY para identificación real.'}
-          <br/>📷 Sube una foto del árbol usando el panel de abajo para comenzar.
+            ? '✅ IA activada — Identificación real y conversación habilitadas.'
+            : '⚠️ Modo demo activo — Configure XAI_API_KEY (Grok) o GEMINI_API_KEY para funcionalidad completa.'}
+          <br/>💬 Pregúntame lo que quieras o 📷 sube una foto para identificar un árbol.
         </div>
       </div>
     </div>`;
@@ -366,6 +368,79 @@ function cerrarModal(e) {
   if (!e || e.target === document.getElementById('result-modal')) {
     document.getElementById('result-modal').style.display = 'none';
   }
+}
+
+// ---- MENSAJES DE TEXTO ----
+async function enviarMensaje() {
+  const textInput = document.getElementById('text-input');
+  const mensaje = textInput.value.trim();
+  
+  if (!mensaje) return;
+  
+  // Limpiar input
+  textInput.value = '';
+  
+  // Agregar mensaje del usuario
+  agregarMensajeUsuarioTexto(mensaje);
+  
+  // Mostrar typing indicator
+  const typingId = mostrarTyping();
+  
+  try {
+    const res = await fetch('/api/mensaje', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensaje })
+    });
+    
+    const json = await res.json();
+    quitarTyping(typingId);
+    
+    if (!json.success) {
+      agregarMensajeBot(`❌ Error: ${json.error}`);
+      return;
+    }
+    
+    const data = json.data;
+    
+    // Agregar respuesta del bot
+    let respuestaFormateada = data.respuesta
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br/>');
+    
+    // Si hay datos del inventario, agregarlos
+    if (data.datos_inventario) {
+      const inv = data.datos_inventario;
+      respuestaFormateada += `
+        <br/><br/>
+        <div style="background:var(--bg-card);padding:12px;border-radius:8px;margin-top:8px;">
+          <strong>📊 Datos del inventario:</strong><br/>
+          <small style="color:var(--text-muted)">
+          • Especie: <strong>${inv.especie}</strong> (<em>${inv.nombre_cientifico}</em>)<br/>
+          • Árboles registrados: <strong>${inv.total_arboles}</strong><br/>
+          • Planes de manejo: <strong>${inv.planes.length}</strong>
+          </small>
+        </div>`;
+    }
+    
+    agregarMensajeBot(respuestaFormateada);
+    
+  } catch (e) {
+    quitarTyping(typingId);
+    agregarMensajeBot('❌ Error de conexión. Verifica que el servidor esté activo.');
+    console.error('Error:', e);
+  }
+}
+
+function agregarMensajeUsuarioTexto(texto) {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg msg-user';
+  div.innerHTML = `
+    <div class="msg-bubble">${texto}</div>
+    <div class="msg-avatar">👤</div>`;
+  msgs.appendChild(div);
+  scrollChat();
 }
 
 // ---- TOAST ----

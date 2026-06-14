@@ -132,7 +132,7 @@
                     // Redirigir según el rol REAL del backend
                     setTimeout(() => {
                         if (result.usuario.rol === 'titular') {
-                            location.href = '../pages/titular_form.html';
+                            location.href = '../pages/titular_dashboard.html';
                         } else if (result.usuario.rol === 'conductor' || result.usuario.rol === 'chofer') {
                             location.href = '../pages/chofer_dashboard.html';
                         } else if (result.usuario.rol === 'centro_transformacion' || result.usuario.rol === 'centro') {

@@ -73,6 +73,24 @@
             <div class="chat-messages" id="chat-messages">
             </div>
             <div class="chat-input-area">
+                <!-- Input de texto para preguntas -->
+                <div class="text-input-container">
+                    <input 
+                        type="text" 
+                        id="text-input" 
+                        class="text-input" 
+                        placeholder="💬 Pregúntame sobre árboles, especies, trazabilidad forestal..."
+                        onkeypress="if(event.key==='Enter') enviarMensaje()"
+                    />
+                    <button class="btn-send" id="btn-send" onclick="enviarMensaje()" title="Enviar mensaje">
+                        <span class="send-icon">📤</span>
+                    </button>
+                </div>
+                
+                <div class="divider-text">
+                    <span>o sube una foto para identificar</span>
+                </div>
+                
                 <div class="upload-zone" id="upload-zone">
                     <input type="file" id="file-input" accept="image/*" hidden />
                     <div class="upload-content" id="upload-content">

@@ -16,8 +16,8 @@ import base64
 ROOT_DIR = Path(__file__).parent
 sys.path.insert(0, str(ROOT_DIR))
 
-# Cargar variables de entorno
-load_dotenv()
+# Cargar variables de entorno (forzar recarga para evitar caché)
+load_dotenv(override=True)
 
 # Importar módulos del proyecto
 from database.db_manager import initialize_database, obtener_estadisticas
@@ -39,25 +39,60 @@ UPLOAD_FOLDER = ROOT_DIR / "uploads"
 UPLOAD_FOLDER.mkdir(exist_ok=True)
 
 # Variables globales
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+XAI_API_KEY = os.getenv("XAI_API_KEY", "")
+
 chatbot = ChatbotOsinfor()
 identificador = None
 
 
 def inicializar_identificador():
-    """Inicializa el identificador de árboles (con o sin API key)."""
+    """Inicializa el identificador de árboles (con o sin API key). Soporta Groq, Grok y Gemini."""
     global identificador
-    if GEMINI_API_KEY and GEMINI_API_KEY != "TU_API_KEY_AQUI":
+    
+    # Obtener API keys
+    groq_key = GROQ_API_KEY
+    xai_key = XAI_API_KEY
+    gemini_key = GEMINI_API_KEY
+    
+    # Intentar con Groq primero (más rápido)
+    if groq_key and groq_key not in ["TU_API_KEY_AQUI", "COLOCA_AQUI_TU_GROQ_API_KEY", ""]:
+        try:
+            from identificador.vision_groq import IdentificadorArbolesGroq
+            identificador = IdentificadorArbolesGroq(api_key=groq_key)
+            print("[App] Identificador con Groq Vision (Llama 3.2) inicializado.")
+            return
+        except Exception as e:
+            print(f"[App] Error al inicializar Groq: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    # Intentar con Grok si Groq no está disponible
+    if xai_key and xai_key not in ["TU_API_KEY_AQUI", "COLOCA_AQUI_TU_GROK_API_KEY", ""]:
+        try:
+            from identificador.vision_grok import IdentificadorArbolesGrok
+            identificador = IdentificadorArbolesGrok(api_key=xai_key)
+            print("[App] Identificador con Grok Vision (xAI) inicializado.")
+            return
+        except Exception as e:
+            print(f"[App] Error al inicializar Grok: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    # Intentar con Gemini si Groq y Grok no están disponibles
+    if gemini_key and gemini_key not in ["TU_API_KEY_AQUI", "COLOCA_AQUI_TU_API_KEY_CORRECTA", ""]:
         try:
             from identificador.vision_arboles import IdentificadorArboles
-            identificador = IdentificadorArboles(api_key=GEMINI_API_KEY)
+            identificador = IdentificadorArboles(api_key=gemini_key)
             print("[App] Identificador con Gemini Vision inicializado.")
+            return
         except Exception as e:
             print(f"[App] Error al inicializar Gemini: {e}")
-            identificador = None
-    else:
-        print("[App] No se configuro API Key. Usando modo demo.")
-        identificador = None
+    
+    # Si ninguno está configurado, usar modo demo
+    print("[App] No se configuro API Key. Usando modo demo.")
+    identificador = None
 
 
 # ============================================================
@@ -204,6 +239,23 @@ def traz_guias(chofer_id):
     return jsonify({'success': True, 'guias': guias})
 
 
+@app.route('/api/traz/guia/<numero_guia>')
+def traz_guia_detalle(numero_guia):
+    from database.trazabilidad_manager import obtener_guia_por_numero
+    guia = obtener_guia_por_numero(numero_guia)
+    if guia:
+        return jsonify({'success': True, 'guia': guia})
+    return jsonify({'success': False, 'error': 'Guía no encontrada'}), 404
+
+
+@app.route('/api/traz/stats/<int:usuario_id>')
+def traz_stats_usuario(usuario_id):
+    from database.trazabilidad_manager import obtener_estadisticas_usuario
+    rol = request.args.get('rol', 'titular')
+    stats = obtener_estadisticas_usuario(usuario_id, rol)
+    return jsonify({'success': True, 'stats': stats})
+
+
 @app.route('/api/traz/recepcion', methods=['POST'])
 def traz_recepcion():
     try:
@@ -259,7 +311,27 @@ def api_bienvenida():
     """Retorna el mensaje de bienvenida y estadísticas del sistema."""
     try:
         respuesta = chatbot.obtener_mensaje_bienvenida()
-        respuesta['api_configurada'] = bool(GEMINI_API_KEY and GEMINI_API_KEY != "TU_API_KEY_AQUI")
+        
+        # Detectar qué API está configurada
+        groq_key = GROQ_API_KEY
+        xai_key = XAI_API_KEY
+        gemini_key = GEMINI_API_KEY
+        
+        api_configurada = False
+        proveedor = None
+        
+        if groq_key and groq_key not in ["TU_API_KEY_AQUI", "COLOCA_AQUI_TU_GROQ_API_KEY", ""]:
+            api_configurada = True
+            proveedor = "Groq (Llama 3.3)"
+        elif xai_key and xai_key not in ["TU_API_KEY_AQUI", "COLOCA_AQUI_TU_GROK_API_KEY", ""]:
+            api_configurada = True
+            proveedor = "Grok (xAI)"
+        elif gemini_key and gemini_key not in ["TU_API_KEY_AQUI", "COLOCA_AQUI_TU_API_KEY_CORRECTA", ""]:
+            api_configurada = True
+            proveedor = "Gemini (Google)"
+        
+        respuesta['api_configurada'] = api_configurada
+        respuesta['proveedor'] = proveedor
         return jsonify({"success": True, "data": respuesta})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -352,6 +424,30 @@ def api_especies():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route('/api/mensaje', methods=['POST'])
+def api_mensaje():
+    """
+    Endpoint para procesar mensajes de texto del usuario.
+    Permite conversación natural sobre temas forestales.
+    """
+    try:
+        data = request.get_json()
+        mensaje = data.get('mensaje', '').strip()
+        
+        if not mensaje:
+            return jsonify({"success": False, "error": "No se proporcionó ningún mensaje"}), 400
+        
+        # Procesar el mensaje con el chatbot
+        respuesta = chatbot.procesar_mensaje_texto(mensaje)
+        return jsonify({"success": True, "data": respuesta})
+        
+    except Exception as e:
+        print(f"[App] Error en mensaje: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": f"Error interno: {str(e)}"}), 500
+
+
 @app.route('/api/health', methods=['GET'])
 def api_health():
     """Verificación de estado del servicio."""
@@ -389,8 +485,18 @@ def inicializar_app():
     # Mostrar estado
     print("[4/4] Servidor listo.\n")
     print(f"  Base de datos: {ROOT_DIR / 'database' / 'inventario_osinfor.db'}")
-    api_status = 'Configurada' if GEMINI_API_KEY and GEMINI_API_KEY != 'TU_API_KEY_AQUI' else 'No configurada (modo demo)'
-    print(f"  API Gemini: {api_status}")
+    
+    # Detectar qué API está configurada
+    if GROQ_API_KEY and GROQ_API_KEY not in ['TU_API_KEY_AQUI', '']:
+        api_status = 'Groq (Llama 3.3) - Configurada [ULTRARAPIDO]'
+    elif XAI_API_KEY and XAI_API_KEY not in ['TU_API_KEY_AQUI', '']:
+        api_status = 'Grok (xAI) - Configurada'
+    elif GEMINI_API_KEY and GEMINI_API_KEY not in ['TU_API_KEY_AQUI', '']:
+        api_status = 'Gemini (Google) - Configurada'
+    else:
+        api_status = 'No configurada (modo demo)'
+    
+    print(f"  API IA: {api_status}")
     print(f"  Interfaz web: http://localhost:5000")
     print("="*60 + "\n")
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Dashboard Centro - BioTrace</title>
+  <title>Dashboard Titular - BioTrace</title>
   <link rel="stylesheet" href="../css/style.css">
   <style>
     * {
@@ -31,7 +31,7 @@
     }
     
     .welcome-banner {
-      background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+      background: linear-gradient(135deg, #0d3b2e 0%, #1a5c47 100%);
       color: white;
       padding: 20px 15px;
       border-radius: 12px;
@@ -41,7 +41,7 @@
     
     .welcome-banner h1 {
       margin: 0 0 8px 0;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 700;
     }
     
@@ -70,8 +70,30 @@
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
+      gap: 10px;
       margin-bottom: 15px;
+    }
+    
+    .stat-card {
+      background: white;
+      padding: 15px 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    
+    .stat-number {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0d3b2e;
+      margin: 8px 0;
+    }
+    
+    .stat-label {
+      font-size: 11px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     @media (min-width: 768px) {
@@ -80,31 +102,7 @@
         gap: 20px;
         margin-bottom: 30px;
       }
-    }
-    
-    .stat-card {
-      background: white;
-      padding: 12px 8px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      text-align: center;
-    }
-    
-    .stat-number {
-      font-size: 22px;
-      font-weight: 700;
-      color: #7c3aed;
-      margin: 6px 0;
-    }
-    
-    .stat-label {
-      font-size: 10px;
-      color: #6b7280;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    
-    @media (min-width: 768px) {
+      
       .stat-card {
         padding: 24px;
         border-radius: 12px;
@@ -117,7 +115,6 @@
       
       .stat-label {
         font-size: 14px;
-        letter-spacing: 0.5px;
       }
     }
     
@@ -128,16 +125,8 @@
       margin-bottom: 15px;
     }
     
-    @media (min-width: 768px) {
-      .action-buttons {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 30px;
-      }
-    }
-    
     .action-btn {
-      background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+      background: linear-gradient(135deg, #0d3b2e 0%, #1a5c47 100%);
       color: white;
       padding: 15px;
       border-radius: 10px;
@@ -154,6 +143,12 @@
     }
     
     @media (min-width: 768px) {
+      .action-buttons {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+      }
+      
       .action-btn {
         padding: 20px;
         border-radius: 12px;
@@ -162,26 +157,40 @@
       
       .action-btn:hover {
         transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+        box-shadow: 0 6px 20px rgba(13, 59, 46, 0.3);
       }
     }
     
     .section-title {
-      font-size: 24px;
+      font-size: 18px;
       font-weight: 700;
-      color: #7c3aed;
-      margin: 30px 0 20px 0;
+      color: #0d3b2e;
+      margin: 20px 0 12px 0;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
     
     .table-container {
       background: white;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    @media (min-width: 768px) {
+      .section-title {
+        font-size: 24px;
+        margin: 30px 0 20px 0;
+        gap: 10px;
+      }
+      
+      .table-container {
+        border-radius: 12px;
+        padding: 20px;
+      }
     }
     
     .data-table {
@@ -191,19 +200,34 @@
     
     .data-table th {
       background: #f3f4f6;
-      padding: 12px;
+      padding: 10px 8px;
       text-align: left;
       font-weight: 600;
       color: #374151;
-      font-size: 13px;
+      font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
     }
     
     .data-table td {
-      padding: 12px;
+      padding: 10px 8px;
       border-bottom: 1px solid #e5e7eb;
-      font-size: 14px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    
+    @media (min-width: 768px) {
+      .data-table th {
+        padding: 12px;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+      }
+      
+      .data-table td {
+        padding: 12px;
+        font-size: 14px;
+      }
     }
     
     .data-table tr:hover {
@@ -224,9 +248,9 @@
       color: #155724;
     }
     
-    .badge-danger {
-      background: #f8d7da;
-      color: #721c24;
+    .badge-warning {
+      background: #fff3cd;
+      color: #856404;
     }
     
     .badge-info {
@@ -234,8 +258,13 @@
       color: #0c5460;
     }
     
+    .badge-secondary {
+      background: #e2e8f0;
+      color: #475569;
+    }
+    
     .btn-link {
-      color: #7c3aed;
+      color: #0d3b2e;
       text-decoration: underline;
       cursor: pointer;
       font-weight: 600;
@@ -256,80 +285,55 @@
 <body class="mint-bg">
   <div class="dashboard-container">
     <div class="welcome-banner">
-      <h1>🏭 Dashboard Centro de Transformación</h1>
+      <h1>🌳 Dashboard del Titular</h1>
       <p id="userName">Bienvenido al Sistema BioTrace</p>
     </div>
     
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-label">Total Recepciones</div>
+        <div class="stat-label">Total Trozos</div>
         <div class="stat-number" id="stat-total">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Aprobados</div>
-        <div class="stat-number" id="stat-aprobados" style="color: #10b981;">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Rechazados</div>
-        <div class="stat-number" id="stat-rechazados" style="color: #ef4444;">0</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">En Tránsito</div>
         <div class="stat-number" id="stat-transito">0</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-label">Recibidos</div>
+        <div class="stat-number" id="stat-recibidos">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pendientes</div>
+        <div class="stat-number" id="stat-pendientes">0</div>
+      </div>
     </div>
     
     <div class="action-buttons">
-      <a href="centro_scan.html" class="action-btn">📱 Escanear QR</a>
-      <a href="centro_comparacion.html" class="action-btn">🔬 Análisis de Corte</a>
-      <a href="/chatbot" class="action-btn">🤖 Chatbot IA</a>
+      <a href="titular_form.html" class="action-btn">➕ Registrar Nuevo Trozo</a>
+      <a href="/chatbot" class="action-btn">🤖 Chatbot IA OSINFOR</a>
     </div>
     
-    <h2 class="section-title">📋 Historial de Recepciones</h2>
+    <h2 class="section-title">📋 Historial de Trozos Registrados</h2>
     
     <div class="table-container">
-      <table class="data-table" id="tablaRecepciones">
+      <table class="data-table" id="tablaTrozos">
         <thead>
           <tr>
-            <th>Código Trozo</th>
+            <th>Código</th>
             <th>Especie</th>
-            <th>Titular</th>
+            <th>Parcela</th>
+            <th>DAP (cm)</th>
             <th>Volumen (m³)</th>
-            <th>Similitud (%)</th>
-            <th>Resultado</th>
+            <th>Estado</th>
             <th>Fecha</th>
             <th>Acciones</th>
           </tr>
         </thead>
-        <tbody id="recepcionesBody">
+        <tbody id="trozosBody">
           <tr>
             <td colspan="8" class="empty-state">
               <div class="empty-state-icon">📦</div>
-              <div>Cargando recepciones...</div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    
-    <h2 class="section-title">🚛 Envíos Pendientes (En Tránsito)</h2>
-    
-    <div class="table-container">
-      <table class="data-table" id="tablaPendientes">
-        <thead>
-          <tr>
-            <th>Código Trozo</th>
-            <th>Especie</th>
-            <th>Chofer</th>
-            <th>Origen</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="pendientesBody">
-          <tr>
-            <td colspan="6" class="empty-state">
-              <div>Cargando envíos pendientes...</div>
+              <div>Cargando trozos...</div>
             </td>
           </tr>
         </tbody>
@@ -341,9 +345,8 @@
   
   <script>
     // Verificar autenticación
-    const rol = sessionStorage.getItem('btl_role');
-    if (rol !== 'centro_transformacion' && rol !== 'centro') {
-      location.href = '../pages/login.html?role=centro';
+    if (sessionStorage.getItem('btl_role') !== 'titular') {
+      location.href = '../pages/login.html?role=titular';
     }
     
     const usuario_id = sessionStorage.getItem('btl_user_id');
@@ -356,48 +359,48 @@
     // Cargar estadísticas
     async function cargarEstadisticas() {
       try {
-        const response = await fetch(`http://localhost:5000/api/traz/stats/${usuario_id}?rol=centro`);
+        const response = await fetch(`http://localhost:5000/api/traz/stats/${usuario_id}?rol=titular`);
         const result = await response.json();
         
         if (result.success) {
-          document.getElementById('stat-total').textContent = result.stats.total_recepciones || 0;
-          document.getElementById('stat-aprobados').textContent = result.stats.aprobados || 0;
-          document.getElementById('stat-rechazados').textContent = result.stats.rechazados || 0;
-          document.getElementById('stat-transito').textContent = result.stats.pendientes || 0;
+          document.getElementById('stat-total').textContent = result.stats.total_trozos || 0;
+          document.getElementById('stat-transito').textContent = result.stats.en_transito || 0;
+          document.getElementById('stat-recibidos').textContent = result.stats.recibidos || 0;
+          document.getElementById('stat-pendientes').textContent = result.stats.pendientes || 0;
         }
       } catch (error) {
         console.error('Error al cargar estadísticas:', error);
       }
     }
     
-    // Cargar historial de recepciones
-    async function cargarRecepciones() {
+    // Cargar historial de trozos
+    async function cargarTrozos() {
       try {
-        const response = await fetch(`http://localhost:5000/api/traz/pedidos/${usuario_id}`);
+        const response = await fetch(`http://localhost:5000/api/traz/trozos/${usuario_id}`);
         const result = await response.json();
         
-        const tbody = document.getElementById('recepcionesBody');
+        const tbody = document.getElementById('trozosBody');
         
-        if (result.success && result.pedidos && result.pedidos.length > 0) {
-          tbody.innerHTML = result.pedidos.map(recepcion => {
-            const resultadoBadge = recepcion.resultado_verificacion === 'APROBADO' ?
-              '<span class="badge badge-success">Aprobado</span>' :
-              '<span class="badge badge-danger">Rechazado</span>';
-            
-            const fecha = new Date(recepcion.fecha_recepcion).toLocaleDateString('es-PE');
-            const similitud = recepcion.similitud_porcentaje || 0;
+        if (result.success && result.trozos && result.trozos.length > 0) {
+          tbody.innerHTML = result.trozos.map(trozo => {
+            const estadoBadge = getEstadoBadge(trozo.estado);
+            const fecha = new Date(trozo.fecha_hora).toLocaleDateString('es-PE');
             
             return `
               <tr>
-                <td><strong>${recepcion.codigo_unico_trozo}</strong></td>
-                <td>${recepcion.especie}</td>
-                <td>${recepcion.titular_nombre}</td>
-                <td>${recepcion.volumen_m3}</td>
-                <td>${similitud.toFixed(1)}%</td>
-                <td>${resultadoBadge}</td>
+                <td><strong>${trozo.codigo_unico_trozo}</strong></td>
+                <td>${trozo.especie}</td>
+                <td>${trozo.numero_parcela}</td>
+                <td>${trozo.dap_cm}</td>
+                <td>${trozo.volumen_m3}</td>
+                <td>${estadoBadge}</td>
                 <td>${fecha}</td>
                 <td>
-                  <button class="btn-link" onclick="verDetalle('${recepcion.codigo_unico_trozo}')">Ver detalle</button>
+                  <button class="btn-link" onclick="verDetalle('${trozo.codigo_unico_trozo}')">Ver detalle</button>
+                  ${trozo.estado === 'EN_TRANSITO' ? 
+                    `<br><button class="btn-link" onclick="verRuta('${trozo.codigo_unico_trozo}')">🚛 Ver ruta</button>` : 
+                    ''
+                  }
                 </td>
               </tr>
             `;
@@ -407,47 +410,33 @@
             <tr>
               <td colspan="8" class="empty-state">
                 <div class="empty-state-icon">📦</div>
-                <div>No hay recepciones registradas todavía.</div>
+                <div>No hay trozos registrados todavía.</div>
                 <br>
-                <a href="centro_scan.html" class="btn-link">Escanear primer trozo</a>
+                <a href="titular_form.html" class="btn-link">Registrar primer trozo</a>
               </td>
             </tr>
           `;
         }
       } catch (error) {
-        console.error('Error al cargar recepciones:', error);
-        document.getElementById('recepcionesBody').innerHTML = `
+        console.error('Error al cargar trozos:', error);
+        document.getElementById('trozosBody').innerHTML = `
           <tr>
             <td colspan="8" class="empty-state">
-              <div style="color: #dc3545;">Error al cargar las recepciones</div>
+              <div style="color: #dc3545;">Error al cargar los trozos</div>
             </td>
           </tr>
         `;
       }
     }
     
-    // Cargar envíos pendientes (en tránsito)
-    async function cargarPendientes() {
-      try {
-        // Obtener todas las guías que están en tránsito
-        const response = await fetch(`http://localhost:5000/api/traz/stats`);
-        const result = await response.json();
-        
-        // Esta es una aproximación, idealmente necesitamos un endpoint específico
-        // Por ahora mostraremos un mensaje
-        const tbody = document.getElementById('pendientesBody');
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="6" class="empty-state">
-              <div>📦 ${result.stats?.en_transito || 0} trozos en tránsito en el sistema</div>
-              <br>
-              <small style="color: #6b7280;">Escanea el QR al recibir un trozo para verificarlo</small>
-            </td>
-          </tr>
-        `;
-      } catch (error) {
-        console.error('Error al cargar pendientes:', error);
-      }
+    function getEstadoBadge(estado) {
+      const badges = {
+        'REGISTRADO': '<span class="badge badge-secondary">Registrado</span>',
+        'EN_TRANSITO': '<span class="badge badge-info">En Tránsito</span>',
+        'RECIBIDO': '<span class="badge badge-success">Recibido</span>',
+        'VERIFICADO': '<span class="badge badge-success">Verificado</span>'
+      };
+      return badges[estado] || `<span class="badge badge-secondary">${estado}</span>`;
     }
     
     function verDetalle(codigo) {
@@ -455,20 +444,19 @@
       // Implementar modal o página de detalle
     }
     
-    function verRutaChofer(codigo) {
+    function verRuta(codigo) {
+      // Redirigir a página de tracking de ruta
       location.href = `tracking_ruta.html?codigo=${codigo}`;
     }
     
     // Cargar datos al iniciar
     cargarEstadisticas();
-    cargarRecepciones();
-    cargarPendientes();
+    cargarTrozos();
     
     // Actualizar cada 30 segundos
     setInterval(() => {
       cargarEstadisticas();
-      cargarRecepciones();
-      cargarPendientes();
+      cargarTrozos();
     }, 30000);
   </script>
 </body>

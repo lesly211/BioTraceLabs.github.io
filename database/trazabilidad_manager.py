@@ -388,3 +388,82 @@ def get_dashboard_stats() -> dict:
         }
     finally:
         conn.close()
+
+
+def obtener_guia_por_numero(numero_guia: str) -> dict | None:
+    """Obtiene información detallada de una guía de transporte por su número."""
+    conn = get_connection()
+    try:
+        row = conn.execute(
+            """SELECT gt.*, 
+                      ct.codigo_unico_trozo, ct.especie, ct.numero_parcela, 
+                      ct.latitud, ct.longitud, ct.dap_cm, ct.volumen_m3,
+                      titular.nombre as titular_nombre, titular.empresa as titular_empresa,
+                      chofer.nombre as chofer_nombre, chofer.dni as chofer_dni, chofer.placa as chofer_placa
+               FROM guias_transporte gt
+               JOIN censos_trozo ct ON gt.censo_trozo_id = ct.id
+               JOIN usuarios titular ON ct.titular_id = titular.id
+               JOIN usuarios chofer ON gt.chofer_id = chofer.id
+               WHERE gt.numero_guia=?""", (numero_guia,)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def obtener_estadisticas_usuario(usuario_id: int, rol: str) -> dict:
+    """Obtiene estadísticas específicas según el rol del usuario."""
+    conn = get_connection()
+    try:
+        stats = {}
+        
+        if rol == 'titular':
+            stats['total_trozos'] = conn.execute(
+                "SELECT COUNT(*) FROM censos_trozo WHERE titular_id=?", (usuario_id,)
+            ).fetchone()[0]
+            stats['en_transito'] = conn.execute(
+                "SELECT COUNT(*) FROM censos_trozo WHERE titular_id=? AND estado='EN_TRANSITO'", (usuario_id,)
+            ).fetchone()[0]
+            stats['recibidos'] = conn.execute(
+                "SELECT COUNT(*) FROM censos_trozo WHERE titular_id=? AND estado='RECIBIDO'", (usuario_id,)
+            ).fetchone()[0]
+            stats['pendientes'] = conn.execute(
+                "SELECT COUNT(*) FROM censos_trozo WHERE titular_id=? AND estado='REGISTRADO'", (usuario_id,)
+            ).fetchone()[0]
+            
+        elif rol in ['conductor', 'chofer']:
+            stats['total_guias'] = conn.execute(
+                "SELECT COUNT(*) FROM guias_transporte WHERE chofer_id=?", (usuario_id,)
+            ).fetchone()[0]
+            stats['en_ruta'] = conn.execute(
+                """SELECT COUNT(*) FROM guias_transporte gt
+                   JOIN censos_trozo ct ON gt.censo_trozo_id = ct.id
+                   WHERE gt.chofer_id=? AND ct.estado='EN_TRANSITO'""", (usuario_id,)
+            ).fetchone()[0]
+            stats['entregados'] = conn.execute(
+                """SELECT COUNT(*) FROM guias_transporte gt
+                   JOIN censos_trozo ct ON gt.censo_trozo_id = ct.id
+                   WHERE gt.chofer_id=? AND ct.estado='RECIBIDO'""", (usuario_id,)
+            ).fetchone()[0]
+            
+        elif rol in ['centro_transformacion', 'centro']:
+            stats['total_recepciones'] = conn.execute(
+                "SELECT COUNT(*) FROM recepciones_centro WHERE centro_id=?", (usuario_id,)
+            ).fetchone()[0]
+            stats['aprobados'] = conn.execute(
+                "SELECT COUNT(*) FROM recepciones_centro WHERE centro_id=? AND resultado_verificacion='APROBADO'", 
+                (usuario_id,)
+            ).fetchone()[0]
+            stats['rechazados'] = conn.execute(
+                "SELECT COUNT(*) FROM recepciones_centro WHERE centro_id=? AND resultado_verificacion='RECHAZADO'", 
+                (usuario_id,)
+            ).fetchone()[0]
+            stats['pendientes'] = conn.execute(
+                """SELECT COUNT(*) FROM guias_transporte gt
+                   JOIN censos_trozo ct ON gt.censo_trozo_id = ct.id
+                   WHERE ct.estado='EN_TRANSITO'""", ()
+            ).fetchone()[0]
+        
+        return stats
+    finally:
+        conn.close()

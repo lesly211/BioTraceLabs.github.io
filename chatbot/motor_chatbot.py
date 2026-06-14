@@ -1,11 +1,13 @@
 """
 Motor del chatbot OSINFOR - Lógica de conversación y verificación de inventario.
 Gestiona el flujo de mensajes y la integración entre visión y base de datos.
+Soporta múltiples proveedores de IA: Grok (xAI) y Gemini (Google).
 """
 
 import json
 from datetime import datetime
 from typing import Optional
+import os
 from database.db_manager import (
     buscar_arbol_por_especie,
     registrar_consulta,
@@ -28,7 +30,98 @@ class ChatbotOsinfor:
     def __init__(self):
         self.estado = ESTADO_BIENVENIDA
         self.ultimo_resultado = None
+        self.modelo_conversacion = None
+        self.chat_session = None
+        self.proveedor_ia = None
+        
+        # Intentar inicializar con Groq primero, luego Grok, luego Gemini
+        groq_key = os.getenv("GROQ_API_KEY", "")
+        xai_key = os.getenv("XAI_API_KEY", "")
+        gemini_key = os.getenv("GEMINI_API_KEY", "")
+        
+        # Prioridad 1: Groq (inferencia ultrarrápida)
+        if groq_key and groq_key not in ["TU_API_KEY_AQUI", "COLOCA_AQUI_TU_GROQ_API_KEY", ""]:
+            try:
+                from identificador.vision_groq import ChatbotGroq
+                self.modelo_conversacion = ChatbotGroq(
+                    api_key=groq_key,
+                    instrucciones_sistema=self._obtener_instrucciones_sistema()
+                )
+                self.proveedor_ia = "groq"
+                print("[Chatbot] Modelo de conversación Groq (Llama 3.3) activado.")
+            except Exception as e:
+                print(f"[Chatbot] Error al inicializar Groq: {e}")
+                self.modelo_conversacion = None
+        
+        # Prioridad 2: Grok (xAI)
+        if not self.modelo_conversacion and xai_key and xai_key not in ["TU_API_KEY_AQUI", "COLOCA_AQUI_TU_GROK_API_KEY", ""]:
+            try:
+                from identificador.vision_grok import ChatbotGrok
+                self.modelo_conversacion = ChatbotGrok(
+                    api_key=xai_key,
+                    instrucciones_sistema=self._obtener_instrucciones_sistema()
+                )
+                self.proveedor_ia = "grok"
+                print("[Chatbot] Modelo de conversación Grok (xAI) activado.")
+            except Exception as e:
+                print(f"[Chatbot] Error al inicializar Grok: {e}")
+                self.modelo_conversacion = None
+        
+        # Prioridad 3: Gemini (Google)
+        if not self.modelo_conversacion and gemini_key and gemini_key not in ["TU_API_KEY_AQUI", "COLOCA_AQUI_TU_API_KEY_CORRECTA", ""]:
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=gemini_key)
+                self.modelo_conversacion = genai.GenerativeModel(
+                    model_name='gemini-1.5-flash',
+                    system_instruction=self._obtener_instrucciones_sistema()
+                )
+                self.proveedor_ia = "gemini"
+                print("[Chatbot] Modelo de conversación Gemini activado.")
+            except Exception as e:
+                print(f"[Chatbot] Error al inicializar Gemini: {e}")
+                self.modelo_conversacion = None
+        
         print("[Chatbot] Motor del chatbot OSINFOR inicializado.")
+    
+    def _obtener_instrucciones_sistema(self) -> str:
+        """Retorna las instrucciones del sistema para el chatbot conversacional."""
+        stats = obtener_estadisticas()
+        especies = listar_todas_especies()
+        especies_lista = ", ".join([f"{e['nombre_comun']} ({e['nombre_cientifico']})" 
+                                   for e in especies[:10]])
+        
+        return f"""Eres un asistente experto en temas forestales y conservación, especializado en el inventario forestal de OSINFOR (Organismo de Supervisión de los Recursos Forestales y de Fauna Silvestre) del Perú.
+
+INFORMACIÓN DEL SISTEMA:
+- Total de árboles registrados: {stats.get('total_arboles', 0)}
+- Especies diferentes: {stats.get('total_especies', 0)}
+- Planes de manejo vigentes: {stats.get('total_planes', 0)}
+- Especies protegidas: {stats.get('especies_protegidas', 0)}
+
+ALGUNAS ESPECIES EN EL INVENTARIO:
+{especies_lista}
+
+TUS CAPACIDADES:
+1. Responder preguntas sobre especies forestales del Perú (especialmente amazónicas)
+2. Explicar temas de trazabilidad forestal y planes de manejo
+3. Informar sobre especies protegidas y legislación forestal
+4. Dar consejos sobre identificación de árboles
+5. Explicar el funcionamiento del sistema de verificación OSINFOR
+6. Responder sobre conceptos como DAP, volumen de madera, inventarios forestales, etc.
+
+IMPORTANTE:
+- Responde de forma clara, concisa y amigable
+- Usa emojis forestales cuando sea apropiado: 🌳 🌲 🍃 🌿 🪵 📋
+- Si te preguntan sobre verificar un árbol específico, recomienda subir una foto
+- Si no sabes algo, sé honesto y sugiere consultar con especialistas
+- Prioriza la información sobre las especies que están en el inventario
+- Enfócate en temas forestales, no respondas sobre temas no relacionados
+
+ESTILO:
+- Profesional pero accesible
+- Educativo y orientado a la conservación
+- Usa lenguaje técnico solo cuando sea necesario, explicándolo siempre"""
 
     def procesar_imagen(self, imagen_bytes: bytes, identificador) -> dict:
         """
@@ -252,3 +345,92 @@ class ChatbotOsinfor:
     def obtener_especies_disponibles(self) -> list[dict]:
         """Lista las especies en el inventario."""
         return listar_todas_especies()
+    
+    def procesar_mensaje_texto(self, mensaje: str) -> dict:
+        """
+        Procesa un mensaje de texto del usuario y genera una respuesta conversacional.
+        
+        Args:
+            mensaje: Texto del mensaje del usuario
+            
+        Returns:
+            Respuesta del chatbot con texto y tipo
+        """
+        if not self.modelo_conversacion:
+            return {
+                "tipo": "texto",
+                "respuesta": (
+                    "⚠️ La función de conversación requiere una API Key de IA configurada.\n\n"
+                    "**Opciones disponibles:**\n"
+                    "• **Groq**: Configura GROQ_API_KEY en https://console.groq.com/ (Recomendado - ultrarrápido)\n"
+                    "• **Grok (xAI)**: Configura XAI_API_KEY en https://console.x.ai/\n"
+                    "• **Gemini (Google)**: Configura GEMINI_API_KEY en https://aistudio.google.com/app/apikey\n\n"
+                    "🌳 Mientras tanto, puedes subir una foto de un árbol para verificarlo en el inventario."
+                ),
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        try:
+            # Generar respuesta según el proveedor
+            if self.proveedor_ia == "groq":
+                # Usar Groq (ChatbotGroq tiene su propio manejo de historial)
+                respuesta_texto = self.modelo_conversacion.enviar_mensaje(mensaje)
+            
+            elif self.proveedor_ia == "grok":
+                # Usar Grok (ChatbotGrok tiene su propio manejo de historial)
+                respuesta_texto = self.modelo_conversacion.enviar_mensaje(mensaje)
+            
+            elif self.proveedor_ia == "gemini":
+                # Usar Gemini
+                if not self.chat_session:
+                    self.chat_session = self.modelo_conversacion.start_chat(history=[])
+                response = self.chat_session.send_message(mensaje)
+                respuesta_texto = response.text
+            
+            else:
+                raise Exception("Proveedor de IA no reconocido")
+            
+            # Detectar si el usuario pregunta por una especie específica
+            especies = listar_todas_especies()
+            especie_mencionada = None
+            for especie in especies:
+                nombre_comun = especie['nombre_comun'].lower()
+                nombre_cientifico = especie['nombre_cientifico'].lower()
+                if nombre_comun in mensaje.lower() or nombre_cientifico in mensaje.lower():
+                    especie_mencionada = especie
+                    break
+            
+            # Si menciona una especie, agregar datos del inventario
+            datos_inventario = None
+            if especie_mencionada:
+                resultado_busqueda = buscar_arbol_por_especie(
+                    nombre_cientifico=especie_mencionada['nombre_cientifico']
+                )
+                if resultado_busqueda:
+                    datos_inventario = {
+                        "especie": especie_mencionada['nombre_comun'],
+                        "nombre_cientifico": especie_mencionada['nombre_cientifico'],
+                        "total_arboles": len(resultado_busqueda),
+                        "planes": list(set(r['codigo_plan'] for r in resultado_busqueda if r.get('codigo_plan'))),
+                        "primer_arbol": resultado_busqueda[0] if resultado_busqueda else None
+                    }
+            
+            return {
+                "tipo": "texto",
+                "respuesta": respuesta_texto,
+                "datos_inventario": datos_inventario,
+                "timestamp": datetime.now().isoformat(),
+                "tiene_modelo": True
+            }
+            
+        except Exception as e:
+            print(f"[Chatbot] Error en conversación: {e}")
+            return {
+                "tipo": "texto",
+                "respuesta": (
+                    f"❌ Lo siento, ocurrió un error al procesar tu mensaje: {str(e)}\n\n"
+                    "Intenta reformular tu pregunta o sube una foto para identificar un árbol."
+                ),
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }

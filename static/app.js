@@ -217,11 +217,19 @@ function mostrarPreviewDocumento(file) {
       <div style="font-size: 64px; margin-bottom: 10px;">${icon}</div>
       <div style="font-size: 14px; font-weight: 600; margin-bottom: 5px;">${file.name}</div>
       <div style="font-size: 12px; color: var(--text-muted);">${(file.size / 1024).toFixed(1)} KB</div>
+      <div style="margin-top: 15px; width: 100%;">
+        <input 
+          type="text" 
+          id="pregunta-documento" 
+          placeholder="💬 ¿Qué quieres saber sobre este documento? (opcional)"
+          style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px;"
+        />
+      </div>
     </div>
     <div class="preview-actions">
       <button class="btn-verify" id="btn-verify" onclick="procesarDocumento()">
         <span class="btn-icon">📖</span>
-        Leer documento
+        Analizar documento
       </button>
       <button class="btn-cancel" onclick="cancelarImagen()">✕ Cancelar</button>
     </div>
@@ -527,19 +535,28 @@ async function procesarDocumento() {
   if (!archivoSeleccionado) return;
 
   const btnVerify = document.getElementById('btn-verify');
+  const preguntaInput = document.getElementById('pregunta-documento');
+  const pregunta = preguntaInput ? preguntaInput.value.trim() : '';
   
   // Mensaje del usuario en el chat
-  agregarMensajeUsuarioDocumento(archivoSeleccionado.name);
+  if (pregunta) {
+    agregarMensajeUsuarioDocumento(archivoSeleccionado.name, pregunta);
+  } else {
+    agregarMensajeUsuarioDocumento(archivoSeleccionado.name);
+  }
 
   // Mostrar indicador de procesamiento
   const typingId = mostrarTyping();
 
   btnVerify.disabled = true;
-  btnVerify.innerHTML = '<span class="spinner"></span> Procesando...';
+  btnVerify.innerHTML = '<span class="spinner"></span> Analizando...';
 
   try {
     const formData = new FormData();
     formData.append('documento', archivoSeleccionado);
+    if (pregunta) {
+      formData.append('pregunta', pregunta);
+    }
 
     const res = await fetch('/api/procesar-documento', { method: 'POST', body: formData });
     const json = await res.json();
@@ -556,28 +573,34 @@ async function procesarDocumento() {
 
     // Mostrar resultado del documento procesado
     if (data.tipo === 'documento_procesado' || data.tipo === 'documento_consultado') {
-      let mensaje = `✅ <strong>Documento procesado exitosamente</strong><br/><br/>`;
+      let mensaje = `✅ <strong>Documento analizado exitosamente</strong><br/><br/>`;
       
       if (data.estadisticas) {
         const stats = data.estadisticas;
         mensaje += `📄 <strong>${stats.archivo}</strong><br/>`;
-        mensaje += `📊 ${stats.palabras} palabras · ${stats.caracteres} caracteres<br/><br/>`;
+        mensaje += `📊 ${stats.palabras.toLocaleString()} palabras · ${stats.caracteres.toLocaleString()} caracteres<br/><br/>`;
       }
       
       if (data.respuesta) {
         // Si hay una consulta sobre el documento
-        mensaje += `<div style="background:var(--bg-card);padding:12px;border-radius:8px;margin-top:8px;">`;
-        mensaje += data.respuesta.replace(/\n/g, '<br/>');
+        mensaje += `<div style="background:var(--bg-card);padding:14px;border-radius:10px;margin-top:10px;line-height:1.6;">`;
+        mensaje += `<strong style="color:var(--primary);">📋 Respuesta:</strong><br/><br/>`;
+        mensaje += data.respuesta.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>');
         mensaje += `</div>`;
       } else if (data.texto) {
-        // Mostrar primeros 500 caracteres del texto extraído
-        const textoMostrar = data.texto.substring(0, 500);
-        mensaje += `<div style="background:var(--bg-card);padding:12px;border-radius:8px;margin-top:8px;font-size:12px;color:var(--text-muted);">`;
-        mensaje += `<strong>Contenido extraído (primeros 500 caracteres):</strong><br/><br/>`;
+        // Mostrar resumen del contenido
+        const palabras = data.texto.split(/\s+/).length;
+        const textoMostrar = data.texto.substring(0, 800);
+        mensaje += `<div style="background:var(--bg-card);padding:14px;border-radius:10px;margin-top:10px;">`;
+        mensaje += `<strong style="color:var(--primary);">📄 Contenido del documento:</strong><br/><br/>`;
+        mensaje += `<div style="font-size:13px;color:var(--text);line-height:1.6;">`;
         mensaje += textoMostrar.replace(/\n/g, '<br/>');
-        if (data.texto.length > 500) mensaje += '<br/><br/><em>... (texto truncado)</em>';
-        mensaje += `</div><br/>`;
-        mensaje += `💬 <em>Ahora puedes hacerme preguntas sobre este documento</em>`;
+        if (data.texto.length > 800) mensaje += '<br/><br/><em style="color:var(--text-muted);">... (continúa)</em>';
+        mensaje += `</div></div><br/>`;
+        mensaje += `<div style="background:var(--success-light);padding:10px;border-radius:8px;font-size:12px;">`;
+        mensaje += `💬 <strong>Ahora puedes hacerme preguntas específicas sobre este documento.</strong><br/>`;
+        mensaje += `Por ejemplo: "¿Cuál es el tema principal?", "Resume el contenido", "¿Qué dice sobre...?"`;
+        mensaje += `</div>`;
       }
       
       agregarMensajeBot(mensaje);
@@ -593,18 +616,24 @@ async function procesarDocumento() {
     mostrarToast('Error de conexión.', 'error');
   } finally {
     btnVerify.disabled = false;
-    btnVerify.innerHTML = '<span class="btn-icon">📖</span> Leer documento';
+    btnVerify.innerHTML = '<span class="btn-icon">📖</span> Analizar documento';
     cancelarImagen();
   }
 }
 
-function agregarMensajeUsuarioDocumento(nombreArchivo) {
+function agregarMensajeUsuarioDocumento(nombreArchivo, pregunta = null) {
   const msgs = document.getElementById('chat-messages');
   const div = document.createElement('div');
   div.className = 'msg msg-user';
+  
+  let contenido = `📎 Analizando documento: <strong>${nombreArchivo}</strong>`;
+  if (pregunta) {
+    contenido += `<br/><br/>💬 Pregunta: <em>"${pregunta}"</em>`;
+  }
+  
   div.innerHTML = `
     <div class="msg-bubble">
-      📎 Procesando documento: <strong>${nombreArchivo}</strong>
+      ${contenido}
     </div>
     <div class="msg-avatar">👤</div>`;
   msgs.appendChild(div);

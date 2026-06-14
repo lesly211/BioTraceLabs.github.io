@@ -429,9 +429,20 @@ ESTILO:
         
         texto_documento = resultado_doc["texto"]
         
-        # Si no hay pregunta, solo retornar el documento procesado
+        # Si no hay pregunta específica, generar un análisis general del documento
         if not pregunta:
-            return resultado_doc
+            if self.modelo_conversacion:
+                # Generar análisis automático
+                pregunta = """Analiza este documento y proporciona:
+1. Tema principal y propósito del documento
+2. Puntos clave o información más importante
+3. Estructura o secciones principales
+4. Cualquier dato relevante (fechas, números, nombres importantes)
+
+Se breve pero informativo."""
+            else:
+                # Sin IA, solo retornar el documento procesado
+                return resultado_doc
         
         # Si hay pregunta, usar el modelo conversacional para responder
         if not self.modelo_conversacion:

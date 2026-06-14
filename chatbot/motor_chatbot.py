@@ -2,12 +2,14 @@
 Motor del chatbot OSINFOR - Lógica de conversación y verificación de inventario.
 Gestiona el flujo de mensajes y la integración entre visión y base de datos.
 Soporta múltiples proveedores de IA: Grok (xAI) y Gemini (Google).
+Permite procesar documentos (PDF, DOCX, imágenes) convirtiéndolos a texto plano.
 """
 
 import json
 from datetime import datetime
 from typing import Optional
 import os
+from pathlib import Path
 from database.db_manager import (
     buscar_arbol_por_especie,
     registrar_consulta,
@@ -345,6 +347,146 @@ ESTILO:
     def obtener_especies_disponibles(self) -> list[dict]:
         """Lista las especies en el inventario."""
         return listar_todas_especies()
+    
+    def procesar_documento(self, filepath: str, force_ocr: bool = False) -> dict:
+        """
+        Procesa un documento (PDF, DOCX, imagen) y lo convierte a texto plano.
+        
+        Args:
+            filepath: Ruta al archivo del documento
+            force_ocr: Forzar OCR incluso si el PDF tiene texto
+            
+        Returns:
+            Resultado del procesamiento con el texto extraído
+        """
+        try:
+            # Importar el módulo de conversión
+            import sys
+            sys.path.insert(0, str(Path(__file__).parent.parent))
+            from conversacion_a_texto_plano import convert_to_text
+            
+            # Convertir documento a texto
+            texto_extraido = convert_to_text(filepath, force_ocr=force_ocr)
+            
+            # Verificar si hay errores en la extracción
+            if texto_extraido.startswith("[Error") or texto_extraido.startswith("[OCR no disponible"):
+                return {
+                    "tipo": "error",
+                    "mensaje": texto_extraido,
+                    "exito": False,
+                    "timestamp": datetime.now().isoformat()
+                }
+            
+            # Contar palabras y caracteres
+            palabras = len(texto_extraido.split())
+            caracteres = len(texto_extraido)
+            
+            return {
+                "tipo": "documento_procesado",
+                "exito": True,
+                "texto": texto_extraido,
+                "estadisticas": {
+                    "palabras": palabras,
+                    "caracteres": caracteres,
+                    "archivo": os.path.basename(filepath)
+                },
+                "mensaje": f"✅ Documento procesado exitosamente: {palabras} palabras, {caracteres} caracteres.",
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except ImportError as e:
+            return {
+                "tipo": "error",
+                "mensaje": f"❌ Error al importar módulo de conversión: {str(e)}. Verifica que 'conversacion_a_texto_plano.py' esté en el directorio raíz.",
+                "exito": False,
+                "timestamp": datetime.now().isoformat()
+            }
+        except Exception as e:
+            return {
+                "tipo": "error",
+                "mensaje": f"❌ Error al procesar documento: {str(e)}",
+                "exito": False,
+                "timestamp": datetime.now().isoformat()
+            }
+    
+    def procesar_documento_y_consultar(self, filepath: str, pregunta: str = None, force_ocr: bool = False) -> dict:
+        """
+        Procesa un documento y permite hacer preguntas sobre su contenido.
+        
+        Args:
+            filepath: Ruta al archivo del documento
+            pregunta: Pregunta opcional sobre el documento
+            force_ocr: Forzar OCR incluso si el PDF tiene texto
+            
+        Returns:
+            Respuesta del chatbot con el análisis del documento
+        """
+        # Primero procesar el documento
+        resultado_doc = self.procesar_documento(filepath, force_ocr)
+        
+        if not resultado_doc.get("exito"):
+            return resultado_doc
+        
+        texto_documento = resultado_doc["texto"]
+        
+        # Si no hay pregunta, solo retornar el documento procesado
+        if not pregunta:
+            return resultado_doc
+        
+        # Si hay pregunta, usar el modelo conversacional para responder
+        if not self.modelo_conversacion:
+            return {
+                "tipo": "documento_procesado",
+                "exito": True,
+                "texto": texto_documento,
+                "estadisticas": resultado_doc["estadisticas"],
+                "mensaje": resultado_doc["mensaje"] + "\n\n⚠️ Para hacer preguntas sobre el documento, configura una API Key de IA.",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        try:
+            # Construir prompt con el contexto del documento
+            prompt_completo = f"""Analiza el siguiente documento y responde la pregunta del usuario.
+
+DOCUMENTO:
+{texto_documento[:4000]}{'...(documento truncado)' if len(texto_documento) > 4000 else ''}
+
+PREGUNTA DEL USUARIO:
+{pregunta}
+
+Responde de forma clara y concisa basándote en el contenido del documento."""
+            
+            # Generar respuesta según el proveedor
+            if self.proveedor_ia == "groq":
+                respuesta_texto = self.modelo_conversacion.enviar_mensaje(prompt_completo)
+            elif self.proveedor_ia == "grok":
+                respuesta_texto = self.modelo_conversacion.enviar_mensaje(prompt_completo)
+            elif self.proveedor_ia == "gemini":
+                if not self.chat_session:
+                    self.chat_session = self.modelo_conversacion.start_chat(history=[])
+                response = self.chat_session.send_message(prompt_completo)
+                respuesta_texto = response.text
+            else:
+                raise Exception("Proveedor de IA no reconocido")
+            
+            return {
+                "tipo": "documento_consultado",
+                "exito": True,
+                "pregunta": pregunta,
+                "respuesta": respuesta_texto,
+                "estadisticas": resultado_doc["estadisticas"],
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            return {
+                "tipo": "documento_procesado",
+                "exito": True,
+                "texto": texto_documento,
+                "estadisticas": resultado_doc["estadisticas"],
+                "mensaje": resultado_doc["mensaje"] + f"\n\n❌ Error al analizar con IA: {str(e)}",
+                "timestamp": datetime.now().isoformat()
+            }
     
     def procesar_mensaje_texto(self, mensaje: str) -> dict:
         """

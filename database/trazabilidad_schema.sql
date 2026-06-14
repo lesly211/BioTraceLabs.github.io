@@ -78,6 +78,22 @@ CREATE TABLE IF NOT EXISTS recepciones_centro (
     FOREIGN KEY (centro_id) REFERENCES usuarios(id)
 );
 
+-- Tabla de checkpoints/puntos de control en la ruta (NUEVO)
+CREATE TABLE IF NOT EXISTS checkpoints_ruta (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guia_transporte_id INTEGER NOT NULL,
+    nombre_checkpoint TEXT NOT NULL,      -- Nombre del punto de control (ej: "Iquitos", "Pucallpa")
+    departamento TEXT NOT NULL,            -- Departamento del checkpoint
+    latitud REAL,
+    longitud REAL,
+    orden INTEGER NOT NULL,                -- Orden del checkpoint en la ruta (1, 2, 3...)
+    estado TEXT DEFAULT 'PENDIENTE' CHECK(estado IN ('PENDIENTE','EN_PROGRESO','COMPLETADO')),
+    fecha_registro DATETIME,               -- Cuando el chofer registró que pasó por aquí
+    observaciones TEXT,
+    foto_checkpoint TEXT,                  -- Foto opcional del checkpoint
+    FOREIGN KEY (guia_transporte_id) REFERENCES guias_transporte(id)
+);
+
 -- =====================================================
 -- DATOS DE DEMO
 -- =====================================================

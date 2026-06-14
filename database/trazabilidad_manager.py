@@ -211,9 +211,19 @@ def registrar_guia_transporte(censo_id, chofer_id, placa, origen, destino, obser
                VALUES (?,?,?,?,?,?,?,?)""",
             (censo_id, chofer_id, numero_guia, placa, origen, destino, datetime.now().isoformat(), observaciones)
         )
+        guia_id = conn.lastrowid
         conn.execute("UPDATE censos_trozo SET estado='EN_TRANSITO' WHERE id=?", (censo_id,))
         conn.commit()
-        return {"success": True, "numero_guia": numero_guia}
+        
+        # Crear checkpoints automáticos para la ruta
+        checkpoints_ids = crear_checkpoints_ruta(guia_id, origen, destino)
+        
+        return {
+            "success": True, 
+            "numero_guia": numero_guia, 
+            "guia_id": guia_id,
+            "checkpoints_creados": len(checkpoints_ids)
+        }
     except Exception as e:
         return {"success": False, "error": str(e)}
     finally:
@@ -465,5 +475,93 @@ def obtener_estadisticas_usuario(usuario_id: int, rol: str) -> dict:
             ).fetchone()[0]
         
         return stats
+    finally:
+        conn.close()
+
+
+def crear_checkpoints_ruta(guia_id: int, origen: str, destino: str) -> list:
+    """
+    Crea checkpoints automáticos basados en la ruta entre origen y destino.
+    Retorna lista de checkpoints creados.
+    """
+    # Mapeo de rutas comunes en el Perú amazónico
+    rutas_comunes = {
+        ('loreto', 'lima'): ['Iquitos', 'Pucallpa', 'Tingo María', 'Huánuco', 'Lima'],
+        ('ucayali', 'lima'): ['Pucallpa', 'Tingo María', 'Huánuco', 'Lima'],
+        ('san martin', 'lima'): ['Tarapoto', 'Juanjuí', 'Tingo María', 'Huánuco', 'Lima'],
+        ('san martín', 'lima'): ['Tarapoto', 'Juanjuí', 'Tingo María', 'Huánuco', 'Lima'],
+        ('madre de dios', 'lima'): ['Puerto Maldonado', 'Cusco', 'Abancay', 'Ayacucho', 'Lima'],
+        ('cusco', 'lima'): ['Cusco', 'Abancay', 'Ayacucho', 'Huancavelica', 'Lima'],
+    }
+    
+    ruta_key = (origen.lower(), destino.lower())
+    checkpoints = rutas_comunes.get(ruta_key, [origen.title(), destino.title()])
+    
+    conn = get_connection()
+    try:
+        checkpoint_ids = []
+        for idx, nombre in enumerate(checkpoints, 1):
+            conn.execute(
+                """INSERT INTO checkpoints_ruta 
+                   (guia_transporte_id, nombre_checkpoint, departamento, orden, estado)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (guia_id, nombre, nombre, idx, 'PENDIENTE' if idx > 1 else 'EN_PROGRESO')
+            )
+            checkpoint_ids.append(conn.lastrowid)
+        conn.commit()
+        return checkpoint_ids
+    except Exception as e:
+        print(f"[Checkpoints] Error: {e}")
+        return []
+    finally:
+        conn.close()
+
+
+def obtener_checkpoints_guia(guia_id: int) -> list:
+    """Obtiene todos los checkpoints de una guía de transporte."""
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            """SELECT * FROM checkpoints_ruta 
+               WHERE guia_transporte_id=? 
+               ORDER BY orden ASC""",
+            (guia_id,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def actualizar_checkpoint(checkpoint_id: int, estado: str, observaciones: str = '') -> dict:
+    """Actualiza el estado de un checkpoint cuando el chofer pasa por él."""
+    conn = get_connection()
+    try:
+        conn.execute(
+            """UPDATE checkpoints_ruta 
+               SET estado=?, fecha_registro=?, observaciones=?
+               WHERE id=?""",
+            (estado, datetime.now().isoformat(), observaciones, checkpoint_id)
+        )
+        conn.commit()
+        return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    finally:
+        conn.close()
+
+
+def obtener_checkpoints_por_codigo_trozo(codigo_trozo: str) -> list:
+    """Obtiene checkpoints de un trozo específico."""
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            """SELECT cr.* FROM checkpoints_ruta cr
+               JOIN guias_transporte gt ON cr.guia_transporte_id = gt.id
+               JOIN censos_trozo ct ON gt.censo_trozo_id = ct.id
+               WHERE ct.codigo_unico_trozo = ?
+               ORDER BY cr.orden ASC""",
+            (codigo_trozo,)
+        ).fetchall()
+        return [dict(r) for r in rows]
     finally:
         conn.close()

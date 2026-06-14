@@ -256,6 +256,30 @@ def traz_stats_usuario(usuario_id):
     return jsonify({'success': True, 'stats': stats})
 
 
+@app.route('/api/traz/checkpoints/<int:guia_id>')
+def traz_checkpoints_guia(guia_id):
+    from database.trazabilidad_manager import obtener_checkpoints_guia
+    checkpoints = obtener_checkpoints_guia(guia_id)
+    return jsonify({'success': True, 'checkpoints': checkpoints})
+
+
+@app.route('/api/traz/checkpoints/trozo/<codigo>')
+def traz_checkpoints_trozo(codigo):
+    from database.trazabilidad_manager import obtener_checkpoints_por_codigo_trozo
+    checkpoints = obtener_checkpoints_por_codigo_trozo(codigo)
+    return jsonify({'success': True, 'checkpoints': checkpoints})
+
+
+@app.route('/api/traz/checkpoint/<int:checkpoint_id>', methods=['PUT'])
+def traz_actualizar_checkpoint(checkpoint_id):
+    from database.trazabilidad_manager import actualizar_checkpoint
+    data = request.get_json()
+    estado = data.get('estado', 'COMPLETADO')
+    observaciones = data.get('observaciones', '')
+    result = actualizar_checkpoint(checkpoint_id, estado, observaciones)
+    return jsonify(result)
+
+
 @app.route('/api/traz/recepcion', methods=['POST'])
 def traz_recepcion():
     try:
@@ -443,6 +467,79 @@ def api_mensaje():
         
     except Exception as e:
         print(f"[App] Error en mensaje: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": f"Error interno: {str(e)}"}), 500
+
+
+@app.route('/api/procesar-documento', methods=['POST'])
+def api_procesar_documento():
+    """
+    Endpoint para procesar documentos (PDF, DOCX, imágenes).
+    Convierte el documento a texto plano para que el chatbot pueda leerlo.
+    
+    Parámetros:
+    - documento: archivo (PDF, DOCX, imagen)
+    - pregunta (opcional): pregunta sobre el documento
+    - force_ocr (opcional): forzar OCR en PDF
+    """
+    try:
+        if 'documento' not in request.files:
+            return jsonify({
+                "success": False, 
+                "error": "No se proporcionó ningún documento. Usa el campo 'documento' para subir el archivo."
+            }), 400
+        
+        archivo = request.files['documento']
+        
+        if not archivo.filename:
+            return jsonify({"success": False, "error": "El archivo no tiene nombre"}), 400
+        
+        # Verificar extensión
+        extension = archivo.filename.rsplit('.', 1)[-1].lower() if '.' in archivo.filename else ''
+        extensiones_permitidas = {'pdf', 'docx', 'txt', 'md', 'png', 'jpg', 'jpeg', 'bmp', 'tiff', 'webp'}
+        
+        if extension not in extensiones_permitidas:
+            return jsonify({
+                "success": False,
+                "error": f"Formato no soportado: .{extension}. Formatos permitidos: {', '.join(extensiones_permitidas)}"
+            }), 400
+        
+        # Guardar archivo temporalmente
+        import time
+        timestamp = int(time.time() * 1000)
+        filename_safe = f"doc_{timestamp}_{archivo.filename}"
+        filepath = UPLOAD_FOLDER / filename_safe
+        archivo.save(str(filepath))
+        
+        # Obtener parámetros opcionales
+        pregunta = request.form.get('pregunta', '').strip()
+        force_ocr = request.form.get('force_ocr', 'false').lower() == 'true'
+        
+        # Procesar documento
+        if pregunta:
+            resultado = chatbot.procesar_documento_y_consultar(
+                str(filepath), 
+                pregunta=pregunta,
+                force_ocr=force_ocr
+            )
+        else:
+            resultado = chatbot.procesar_documento(
+                str(filepath),
+                force_ocr=force_ocr
+            )
+        
+        # Eliminar archivo temporal si se procesó exitosamente
+        if resultado.get('exito') and filepath.exists():
+            try:
+                filepath.unlink()
+            except:
+                pass
+        
+        return jsonify({"success": resultado.get('exito', False), "data": resultado})
+        
+    except Exception as e:
+        print(f"[App] Error al procesar documento: {e}")
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "error": f"Error interno: {str(e)}"}), 500

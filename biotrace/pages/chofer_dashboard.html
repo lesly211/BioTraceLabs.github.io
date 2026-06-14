@@ -368,7 +368,11 @@
       </div>
     </div>
     
-    <a href="#" onclick="abrirModalGuia()" class="action-btn">➕ Registrar Nueva Guía de Transporte</a>
+      <a href="#" onclick="abrirModalGuia()" class="action-btn">➕ Registrar Nueva Guía de Transporte</a>
+      
+      <div style="text-align: center; margin: 15px 0; font-size: 13px; color: #666;">
+        <p>💡 Toca una guía para ver sus checkpoints y marcar tu progreso en la ruta</p>
+      </div>
     
     <h2 class="section-title">📋 Mis Guías de Transporte</h2>
     
@@ -462,7 +466,7 @@
     // Cargar estadísticas
     async function cargarEstadisticas() {
       try {
-        const response = await fetch(`http://localhost:5000/api/traz/stats/${usuario_id}?rol=chofer`);
+        const response = await fetch(`${window.location.origin}/api/traz/stats/${usuario_id}?rol=chofer`);
         const result = await response.json();
         
         if (result.success) {
@@ -478,7 +482,7 @@
     // Cargar historial de guías
     async function cargarGuias() {
       try {
-        const response = await fetch(`http://localhost:5000/api/traz/guias/${usuario_id}`);
+        const response = await fetch(`${window.location.origin}/api/traz/guias/${usuario_id}`);
         const result = await response.json();
         
         const tbody = document.getElementById('guiasBody');
@@ -503,7 +507,7 @@
                 <td>${estadoBadge}</td>
                 <td>${fechaSalida}</td>
                 <td>
-                  <button class="btn-link" onclick="verDetalleGuia('${guia.numero_guia}')">Ver detalle</button>
+                  <button class="btn-link" onclick="verCheckpoints('${guia.numero_guia}', ${guia.id})">📍 Ver ruta</button>
                 </td>
               </tr>
             `;
@@ -570,7 +574,7 @@
       btn.disabled = true;
       
       try {
-        const response = await fetch('http://localhost:5000/api/traz/guia', {
+        const response = await fetch(`${window.location.origin}/api/traz/guia`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -611,6 +615,11 @@
     function verDetalleGuia(numeroGuia) {
       alert(`Ver detalle completo de la guía: ${numeroGuia}`);
       // Implementar modal o página de detalle
+    }
+    
+    function verCheckpoints(numeroGuia, guiaId) {
+      // Redirigir a página de checkpoints del chofer
+      location.href = `chofer_checkpoints.html?guia_id=${guiaId}&numero=${numeroGuia}`;
     }
     
     // Cerrar modal al hacer clic fuera

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Checkpoints - Chofer</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+    }
+    
+    .container {
+      padding: 15px;
+      max-width: 100%;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      color: white;
+      padding: 20px 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      margin: 0 0 5px 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    .header p {
+      margin: 0;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    
+    .checkpoint-card {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .checkpoint-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .checkpoint-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    
+    .checkpoint-number.pending {
+      background: #e0e0e0;
+      color: #666;
+    }
+    
+    .checkpoint-number.progress {
+      background: #ff9800;
+      color: white;
+      animation: pulse 2s infinite;
+    }
+    
+    .checkpoint-number.completed {
+      background: #4caf50;
+      color: white;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    
+    .checkpoint-info {
+      flex: 1;
+    }
+    
+    .checkpoint-name {
+      font-weight: 700;
+      font-size: 16px;
+      color: #1f2937;
+      margin-bottom: 4px;
+    }
+    
+    .checkpoint-status {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    
+    .checkpoint-time {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+    
+    .checkpoint-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .btn-action {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-start {
+      background: #ff9800;
+      color: white;
+    }
+    
+    .btn-complete {
+      background: #4caf50;
+      color: white;
+    }
+    
+    .btn-action:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-action:active:not(:disabled) {
+      transform: scale(0.95);
+    }
+    
+    .progress-bar {
+      background: #e5e7eb;
+      height: 8px;
+      border-radius: 10px;
+      margin: 15px 0;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+      height: 100%;
+      transition: width 0.5s ease;
+    }
+    
+    .progress-text {
+      text-align: center;
+      font-size: 13px;
+      color: #666;
+      margin-top: 8px;
+    }
+    
+    .btn-back {
+      background: #1e3a8a;
+      color: white;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+      text-decoration: none;
+      font-weight: 600;
+      display: block;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    
+    .alert {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 13px;
+      text-align: center;
+      display: none;
+    }
+    
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .alert-info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+    
+    @media (min-width: 768px) {
+      .container {
+        padding: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      
+      .header h1 {
+        font-size: 24px;
+      }
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📍 Puntos de Control de la Ruta</h1>
+      <p id="guiaNumero">Guía de Transporte</p>
+    </div>
+    
+    <div id="alertBox" class="alert alert-success"></div>
+    
+    <!-- Barra de progreso -->
+    <div style="background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+      <div style="font-weight: 700; margin-bottom: 10px; font-size: 14px;">Progreso de la Ruta</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressBar" style="width: 0%;"></div>
+      </div>
+      <div class="progress-text">
+        <span id="progressText">0% completado</span>
+      </div>
+    </div>
+    
+    <div id="checkpointsContainer">
+      <div style="text-align: center; padding: 40px 20px; color: #666;">
+        <div style="font-size: 48px; margin-bottom: 15px; animation: spin 2s linear infinite;">⏳</div>
+        <p>Cargando checkpoints...</p>
+      </div>
+    </div>
+    
+    <a href="chofer_dashboard.html" class="btn-back">← Volver al Dashboard</a>
+  </div>
+  
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const guiaId = params.get('guia_id');
+    const numeroGuia = params.get('numero');
+    
+    if (numeroGuia) {
+      document.getElementById('guiaNumero').textContent = `Guía: ${numeroGuia}`;
+    }
+    
+    if (!guiaId) {
+      showError('No se proporcionó ID de guía');
+    } else {
+      cargarCheckpoints();
+    }
+    
+    async function cargarCheckpoints() {
+      try {
+        const response = await fetch(`${window.location.origin}/api/traz/checkpoints/${guiaId}`);
+        const result = await response.json();
+        
+        if (result.success && result.checkpoints) {
+          mostrarCheckpoints(result.checkpoints);
+          actualizarProgreso(result.checkpoints);
+        } else {
+          showError('No se encontraron checkpoints para esta guía');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showError('Error al cargar los checkpoints');
+      }
+    }
+    
+    function mostrarCheckpoints(checkpoints) {
+      const container = document.getElementById('checkpointsContainer');
+      
+      if (!checkpoints || checkpoints.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 40px 20px;">
+            <div style="font-size: 48px; margin-bottom: 15px;">📦</div>
+            <p style="color: #666;">No hay checkpoints configurados para esta ruta</p>
+          </div>
+        `;
+        return;
+      }
+      
+      let html = '';
+      checkpoints.forEach((cp, idx) => {
+        const statusClass = cp.estado === 'COMPLETADO' ? 'completed' :
+                           cp.estado === 'EN_PROGRESO' ? 'progress' : 'pending';
+        
+        const statusText = cp.estado === 'COMPLETADO' ? '✓ Completado' :
+                          cp.estado === 'EN_PROGRESO' ? '🚛 En progreso' : '⏳ Pendiente';
+        
+        const timeText = cp.fecha_registro ?
+          new Date(cp.fecha_registro).toLocaleString('es-PE', {dateStyle: 'short', timeStyle: 'short'}) : '';
+        
+        const canStart = cp.estado === 'PENDIENTE' && (idx === 0 || checkpoints[idx-1].estado === 'COMPLETADO');
+        const canComplete = cp.estado === 'EN_PROGRESO';
+        
+        html += `
+          <div class="checkpoint-card">
+            <div class="checkpoint-header">
+              <div class="checkpoint-number ${statusClass}">${idx + 1}</div>
+              <div class="checkpoint-info">
+                <div class="checkpoint-name">${cp.nombre_checkpoint}</div>
+                <div class="checkpoint-status">${statusText}</div>
+                ${timeText ? `<div class="checkpoint-time">${timeText}</div>` : ''}
+              </div>
+            </div>
+            
+            ${cp.estado !== 'COMPLETADO' ? `
+              <div class="checkpoint-actions">
+                <button class="btn-action btn-start" 
+                        onclick="iniciarCheckpoint(${cp.id})"
+                        ${!canStart ? 'disabled' : ''}>
+                  🚀 Iniciar
+                </button>
+                <button class="btn-action btn-complete" 
+                        onclick="completarCheckpoint(${cp.id})"
+                        ${!canComplete ? 'disabled' : ''}>
+                  ✓ Completar
+                </button>
+              </div>
+            ` : ''}
+            
+            ${cp.observaciones ? `
+              <div style="margin-top: 10px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 12px;">
+                💬 ${cp.observaciones}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+    
+    function actualizarProgreso(checkpoints) {
+      const total = checkpoints.length;
+      const completados = checkpoints.filter(cp => cp.estado === 'COMPLETADO').length;
+      const porcentaje = total > 0 ? Math.round((completados / total) * 100) : 0;
+      
+      document.getElementById('progressBar').style.width = `${porcentaje}%`;
+      document.getElementById('progressText').textContent = `${porcentaje}% completado (${completados}/${total} puntos)`;
+    }
+    
+    async function iniciarCheckpoint(checkpointId) {
+      if (!confirm('¿Iniciar este punto de control?')) return;
+      
+      try {
+        const response = await fetch(`${window.location.origin}/api/traz/checkpoint/${checkpointId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            estado: 'EN_PROGRESO',
+            observaciones: 'Checkpoint iniciado'
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showAlert('✓ Checkpoint iniciado correctamente', 'success');
+          setTimeout(() => cargarCheckpoints(), 1000);
+        } else {
+          alert('Error al iniciar checkpoint: ' + (result.error || 'Error desconocido'));
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión al iniciar checkpoint');
+      }
+    }
+    
+    async function completarCheckpoint(checkpointId) {
+      if (!confirm('¿Marcar este punto como completado?')) return;
+      
+      try {
+        const response = await fetch(`${window.location.origin}/api/traz/checkpoint/${checkpointId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            estado: 'COMPLETADO',
+            observaciones: 'Checkpoint completado'
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showAlert('✓ Checkpoint completado. ¡Buen viaje!', 'success');
+          setTimeout(() => cargarCheckpoints(), 1000);
+        } else {
+          alert('Error al completar checkpoint: ' + (result.error || 'Error desconocido'));
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión al completar checkpoint');
+      }
+    }
+    
+    function showAlert(message, type) {
+      const alertBox = document.getElementById('alertBox');
+      alertBox.textContent = message;
+      alertBox.className = `alert alert-${type}`;
+      alertBox.style.display = 'block';
+      
+      setTimeout(() => {
+        alertBox.style.display = 'none';
+      }, 3000);
+    }
+    
+    function showError(message) {
+      document.getElementById('checkpointsContainer').innerHTML = `
+        <div style="text-align: center; padding: 40px 20px;">
+          <div style="font-size: 48px; margin-bottom: 15px; color: #dc3545;">❌</div>
+          <p style="color: #666;">${message}</p>
+        </div>
+      `;
+    }
+    
+    // Recargar cada 30 segundos para ver actualizaciones
+    setInterval(() => {
+      cargarCheckpoints();
+    }, 30000);
+  </script>
+</body>
+</html>
